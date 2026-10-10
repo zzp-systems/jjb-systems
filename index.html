@@ -48,27 +48,23 @@
         }
         
         /* ── ENHANCED CONFETTI BACKGROUND ── */
-        /* Uses a custom SVG data URI to create a mix of shapes (stars, squares, circles, triangles) */
         .confetti-bg {
             background-color: #1a052b;
-            /* The SVG below contains multiple different colored confetti shapes */
             background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200' viewBox='0 0 200 200'%3E%3Cpath d='M20 20h8v8h-8z' fill='%23ffb700' opacity='0.3'/%3E%3Ccircle cx='150' cy='40' r='4' fill='%23ffffff' opacity='0.2'/%3E%3Cpath d='M100 80l5 10h-10z' fill='%23ffcc33' opacity='0.4'/%3E%3Cpath d='M180 150h6v6h-6z' fill='%237b1fa2' opacity='0.5'/%3E%3Ccircle cx='40' cy='160' r='3' fill='%2300ffff' opacity='0.3'/%3E%3Cpath d='M70 110l3 6h-6z' fill='%23ff8c00' opacity='0.3'/%3E%3Ccircle cx='130' cy='180' r='5' fill='%23ffb700' opacity='0.2'/%3E%3Cpath d='M10 90h4v4h-4z' fill='%23ffffff' opacity='0.3'/%3E%3Ccircle cx='180' cy='20' r='3' fill='%23ffcc33' opacity='0.4'/%3E%3Cpath d='M110 20h6v6h-6z' fill='%23ff8c00' opacity='0.3'/%3E%3Cpath d='M50 50l4 8h-8z' fill='%23ffffff' opacity='0.2'/%3E%3Ccircle cx='90' cy='140' r='4' fill='%237b1fa2' opacity='0.5'/%3E%3Cpath d='M160 100h5v5h-5z' fill='%2300ffff' opacity='0.2'/%3E%3C/svg%3E");
             background-size: 200px 200px;
             animation: confetti-drift 30s linear infinite;
         }
 
-        /* Subtle animation to make the confetti drift slowly */
         @keyframes confetti-drift {
             0% { background-position: 0 0; }
             100% { background-position: 200px 200px; }
         }
 
-        /* Mockup Top Bar */
         .top-bar {
             border-bottom: 1px solid rgba(255, 215, 0, 0.2);
         }
 
-        /* Centered Logo Overlap */
+        /* ── LOGO WRAPPER (UPDATED FOR MOBILE) ── */
         .logo-wrapper {
             position: absolute;
             top: 10px;
@@ -82,13 +78,21 @@
             box-shadow: 0 10px 25px rgba(0,0,0,0.5);
             width: 140px;
             height: 140px;
-            display: flex;
+            display: flex; /* Changed from 'hidden md:flex' to 'flex' */
             align-items: center;
             justify-content: center;
             overflow: hidden;
         }
 
-        /* Golden Ribbon Divider */
+        /* Adjust logo size for mobile */
+        @media (max-width: 767px) {
+            .logo-wrapper {
+                width: 100px;
+                height: 100px;
+                top: 5px;
+            }
+        }
+
         .gold-ribbon {
             background: linear-gradient(90deg, #b8860b, #ffd700, #ffb700, #ffd700, #b8860b);
             height: 12px;
@@ -96,7 +100,6 @@
             box-shadow: 0 4px 15px rgba(255, 183, 0, 0.4);
         }
 
-        /* Mockup Card Styles */
         .mockup-card {
             border-radius: 24px;
             padding: 30px 20px;
@@ -119,7 +122,6 @@
             pointer-events: none;
         }
 
-        /* Golden Plate Illusion for Product Grid */
         .gold-plate-wrapper {
             position: relative;
             padding-bottom: 20px;
@@ -138,7 +140,6 @@
             filter: blur(2px);
         }
 
-        /* Button styling matching the mockup */
         .btn-pill {
             background: linear-gradient(90deg, #ffcc33, #ff8c00);
             color: #1a052b;
@@ -169,17 +170,18 @@
         
         <!-- Main Nav -->
         <div class="bg-brand-bgLight/90 backdrop-blur-md sticky top-0 h-16 flex items-center justify-center">
-            <!-- Center Logo overlapping the nav bar -->
-            <div class="logo-wrapper hidden md:flex">
+            <!-- Center Logo (now visible on all devices) -->
+            <div class="logo-wrapper">
                 <img src="https://raw.githubusercontent.com/zzp-systems/jjb-systems/refs/heads/main/jjb-logo-transaparent.png" alt="Jang-Jang Bakeshop Logo" class="w-full h-full object-contain rounded-full">
             </div>
             
-            <nav class="flex gap-4 md:gap-32 lg:gap-48 font-heading font-semibold text-white px-4 w-full max-w-5xl justify-between md:justify-center">
-                <div class="flex gap-4 md:gap-8 z-10">
+            <!-- Mobile-friendly navigation with adjusted gaps and smaller text -->
+            <nav class="flex gap-2 md:gap-32 lg:gap-48 font-heading font-semibold text-white px-4 w-full max-w-5xl justify-between md:justify-center text-xs md:text-base">
+                <div class="flex gap-2 md:gap-8 z-10">
                     <a href="#home" class="hover:text-brand-gold transition-colors">Home</a>
                     <a href="#about" class="hover:text-brand-gold transition-colors">About Us</a>
                 </div>
-                <div class="flex gap-4 md:gap-8 z-10">
+                <div class="flex gap-2 md:gap-8 z-10">
                     <a href="#menu" class="hover:text-brand-gold transition-colors">Menu</a>
                     <a href="#contact" class="hover:text-brand-gold transition-colors">Contact Us</a>
                 </div>
@@ -207,11 +209,10 @@
             </div>
         </section>
 
-        <!-- 3-Card Layout (Matching the Mockup Visuals) -->
+        <!-- 3-Card Layout -->
         <section class="py-12 px-4 sm:px-6 lg:px-8 relative z-10">
             <div class="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8">
                 
-                <!-- Card 1: Gold Gradient -->
                 <div id="about" class="mockup-card bg-gold-gradient text-brand-bg">
                     <div class="text-5xl mb-4">📖</div>
                     <h3 class="text-2xl font-heading font-bold mb-3">Our Story</h3>
@@ -221,7 +222,6 @@
                     </p>
                 </div>
 
-                <!-- Card 2: Purple Gradient -->
                 <div id="menu" class="mockup-card bg-purple-gradient text-white transform md:-translate-y-4">
                     <div class="text-5xl mb-4">🧁</div>
                     <h3 class="text-2xl font-heading font-bold mb-3 text-brand-gold">Our Menu</h3>
@@ -232,7 +232,6 @@
                     <a href="#products-grid" class="inline-block mt-6 btn-pill text-xs py-2 px-6">View Full Menu</a>
                 </div>
 
-                <!-- Card 3: Gold Gradient -->
                 <div id="qa" class="mockup-card bg-gold-gradient text-brand-bg">
                     <div class="text-5xl mb-4">🏅</div>
                     <h3 class="text-2xl font-heading font-bold mb-3">Quality Assurance</h3>
@@ -251,7 +250,6 @@
             <h2 class="text-4xl md:text-5xl font-heading font-bold text-brand-gold mb-2">Freshly Baked Goodies</h2>
             <p class="text-xl text-white mb-16">See what's baking at Jang-Jang Bakeshop</p>
             
-            <!-- Updated Grid: 3 Columns on LG screens creates a perfect 3x2 grid -->
             <div class="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                 
                 <!-- Item 1: Biscocho -->
@@ -296,7 +294,7 @@
                     <div class="gold-plate"></div>
                 </div>
 
-                <!-- Item 5: Breads (Separated) -->
+                <!-- Item 5: Breads -->
                 <div class="bg-brand-bgLight/50 p-6 rounded-2xl border border-brand-purple/50 gold-plate-wrapper flex flex-col justify-between">
                     <div>
                         <div class="text-4xl mb-4">🥖</div>
@@ -306,7 +304,7 @@
                     <div class="gold-plate"></div>
                 </div>
 
-                <!-- Item 6: Pastries (Separated) -->
+                <!-- Item 6: Pastries -->
                 <div class="bg-brand-bgLight/50 p-6 rounded-2xl border border-brand-purple/50 gold-plate-wrapper flex flex-col justify-between">
                     <div>
                         <div class="text-4xl mb-4">🧁</div>
