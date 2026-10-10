@@ -47,15 +47,20 @@
             overflow-x: hidden;
         }
         
-        /* Confetti / Sparkle Background matching the mockup */
+        /* ── ENHANCED CONFETTI BACKGROUND ── */
+        /* Uses a custom SVG data URI to create a mix of shapes (stars, squares, circles, triangles) */
         .confetti-bg {
-            background-image: 
-                radial-gradient(circle at 15% 50%, rgba(255, 215, 0, 0.15) 2px, transparent 3px),
-                radial-gradient(circle at 85% 30%, rgba(255, 255, 255, 0.15) 2px, transparent 3px),
-                radial-gradient(circle at 50% 80%, rgba(0, 255, 255, 0.1) 3px, transparent 4px),
-                radial-gradient(circle at 20% 20%, rgba(255, 0, 255, 0.1) 2.5px, transparent 3.5px),
-                radial-gradient(circle at 80% 90%, rgba(255, 215, 0, 0.1) 2px, transparent 3px);
-            background-size: 150px 150px;
+            background-color: #1a052b;
+            /* The SVG below contains multiple different colored confetti shapes */
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200' viewBox='0 0 200 200'%3E%3Cpath d='M20 20h8v8h-8z' fill='%23ffb700' opacity='0.3'/%3E%3Ccircle cx='150' cy='40' r='4' fill='%23ffffff' opacity='0.2'/%3E%3Cpath d='M100 80l5 10h-10z' fill='%23ffcc33' opacity='0.4'/%3E%3Cpath d='M180 150h6v6h-6z' fill='%237b1fa2' opacity='0.5'/%3E%3Ccircle cx='40' cy='160' r='3' fill='%2300ffff' opacity='0.3'/%3E%3Cpath d='M70 110l3 6h-6z' fill='%23ff8c00' opacity='0.3'/%3E%3Ccircle cx='130' cy='180' r='5' fill='%23ffb700' opacity='0.2'/%3E%3Cpath d='M10 90h4v4h-4z' fill='%23ffffff' opacity='0.3'/%3E%3Ccircle cx='180' cy='20' r='3' fill='%23ffcc33' opacity='0.4'/%3E%3Cpath d='M110 20h6v6h-6z' fill='%23ff8c00' opacity='0.3'/%3E%3Cpath d='M50 50l4 8h-8z' fill='%23ffffff' opacity='0.2'/%3E%3Ccircle cx='90' cy='140' r='4' fill='%237b1fa2' opacity='0.5'/%3E%3Cpath d='M160 100h5v5h-5z' fill='%2300ffff' opacity='0.2'/%3E%3C/svg%3E");
+            background-size: 200px 200px;
+            animation: confetti-drift 30s linear infinite;
+        }
+
+        /* Subtle animation to make the confetti drift slowly */
+        @keyframes confetti-drift {
+            0% { background-position: 0 0; }
+            100% { background-position: 200px 200px; }
         }
 
         /* Mockup Top Bar */
@@ -80,7 +85,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            overflow: hidden; /* Ensures the logo stays perfectly inside the circle */
+            overflow: hidden;
         }
 
         /* Golden Ribbon Divider */
@@ -246,33 +251,68 @@
             <h2 class="text-4xl md:text-5xl font-heading font-bold text-brand-gold mb-2">Freshly Baked Goodies</h2>
             <p class="text-xl text-white mb-16">See what's baking at Jang-Jang Bakeshop</p>
             
-            <div class="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+            <!-- Updated Grid: 3 Columns on LG screens creates a perfect 3x2 grid -->
+            <div class="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                 
-                <div class="bg-brand-bgLight/50 p-6 rounded-2xl border border-brand-purple/50 gold-plate-wrapper">
-                    <div class="text-4xl mb-4">🍞</div>
-                    <h3 class="text-xl font-heading font-bold text-brand-gold mb-2">Biscocho & Otap</h3>
-                    <p class="text-gray-300 text-sm">Crispy, golden, and proudly FDA‑licensed — our flagship products that define our craftsmanship.</p>
+                <!-- Item 1: Biscocho -->
+                <div class="bg-brand-bgLight/50 p-6 rounded-2xl border border-brand-purple/50 gold-plate-wrapper flex flex-col justify-between">
+                    <div>
+                        <div class="text-4xl mb-4">🍞</div>
+                        <h3 class="text-xl font-heading font-bold text-brand-gold mb-2">Biscocho</h3>
+                        <p class="text-gray-300 text-sm">Crispy, golden, and proudly FDA‑licensed — our flagship toasted bread delicacy.</p>
+                    </div>
                     <div class="gold-plate"></div>
                 </div>
 
-                <div class="bg-brand-bgLight/50 p-6 rounded-2xl border border-brand-purple/50 gold-plate-wrapper">
-                    <div class="text-4xl mb-4">🍌</div>
-                    <h3 class="text-xl font-heading font-bold text-brand-gold mb-2">Flavored Banana Chips</h3>
-                    <p class="text-gray-300 text-sm">Coming soon! A sweet‑savory twist on a Filipino favorite, made with precision and care.</p>
+                <!-- Item 2: Otap -->
+                <div class="bg-brand-bgLight/50 p-6 rounded-2xl border border-brand-purple/50 gold-plate-wrapper flex flex-col justify-between">
+                    <div>
+                        <div class="text-4xl mb-4">🥐</div>
+                        <h3 class="text-xl font-heading font-bold text-brand-gold mb-2">Otap</h3>
+                        <p class="text-gray-300 text-sm">Flaky, sweet, and proudly FDA‑licensed — our signature layered puff pastry.</p>
+                    </div>
                     <div class="gold-plate"></div>
                 </div>
 
-                <div class="bg-brand-bgLight/50 p-6 rounded-2xl border border-brand-purple/50 gold-plate-wrapper">
-                    <div class="text-4xl mb-4">🥜</div>
-                    <h3 class="text-xl font-heading font-bold text-brand-gold mb-2">Peanut Brittle</h3>
-                    <p class="text-gray-300 text-sm">Crunchy, caramelized perfection — soon to join our certified lineup.</p>
+                <!-- Item 3: Flavored Banana Chips -->
+                <div class="bg-brand-bgLight/50 p-6 rounded-2xl border border-brand-purple/50 gold-plate-wrapper flex flex-col justify-between">
+                    <div>
+                        <div class="text-4xl mb-4">🍌</div>
+                        <h3 class="text-xl font-heading font-bold text-brand-gold mb-2">Flavored Banana Chips</h3>
+                        <p class="text-gray-300 text-sm mb-3">Available in-store! A sweet‑savory twist on a Filipino favorite, made with precision and care.</p>
+                        <span class="inline-block bg-brand-purple/30 text-brand-gold text-xs font-semibold px-2 py-1 rounded">Pending FDA Commercial Approval</span>
+                    </div>
                     <div class="gold-plate"></div>
                 </div>
 
-                <div class="bg-brand-bgLight/50 p-6 rounded-2xl border border-brand-purple/50 gold-plate-wrapper">
-                    <div class="text-4xl mb-4">🥐</div>
-                    <h3 class="text-xl font-heading font-bold text-brand-gold mb-2">Breads & Pastries</h3>
-                    <p class="text-gray-300 text-sm">From soft pandesal to decadent cakes, we bake daily to bring comfort and joy to every table.</p>
+                <!-- Item 4: Peanut Brittle -->
+                <div class="bg-brand-bgLight/50 p-6 rounded-2xl border border-brand-purple/50 gold-plate-wrapper flex flex-col justify-between">
+                    <div>
+                        <div class="text-4xl mb-4">🥜</div>
+                        <h3 class="text-xl font-heading font-bold text-brand-gold mb-2">Peanut Brittle</h3>
+                        <p class="text-gray-300 text-sm mb-3">Available in-store! Crunchy, caramelized perfection made with care.</p>
+                        <span class="inline-block bg-brand-purple/30 text-brand-gold text-xs font-semibold px-2 py-1 rounded">Pending FDA Commercial Approval</span>
+                    </div>
+                    <div class="gold-plate"></div>
+                </div>
+
+                <!-- Item 5: Breads (Separated) -->
+                <div class="bg-brand-bgLight/50 p-6 rounded-2xl border border-brand-purple/50 gold-plate-wrapper flex flex-col justify-between">
+                    <div>
+                        <div class="text-4xl mb-4">🥖</div>
+                        <h3 class="text-xl font-heading font-bold text-brand-gold mb-2">Breads</h3>
+                        <p class="text-gray-300 text-sm">From soft pandesal to hearty loaf breads, we bake daily to bring comfort to every table.</p>
+                    </div>
+                    <div class="gold-plate"></div>
+                </div>
+
+                <!-- Item 6: Pastries (Separated) -->
+                <div class="bg-brand-bgLight/50 p-6 rounded-2xl border border-brand-purple/50 gold-plate-wrapper flex flex-col justify-between">
+                    <div>
+                        <div class="text-4xl mb-4">🧁</div>
+                        <h3 class="text-xl font-heading font-bold text-brand-gold mb-2">Pastries</h3>
+                        <p class="text-gray-300 text-sm">Decadent cakes, sweet rolls, and flaky treats baked fresh to bring joy to your day.</p>
+                    </div>
                     <div class="gold-plate"></div>
                 </div>
 
