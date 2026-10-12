@@ -5,35 +5,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Jang-Jang Bakeshop | Baked with Love, Crafted for Quality</title>
     <meta name="description" content="From our ovens in Davao City to homes across the Philippines, Jang‑Jang Bakeshop bridges heartfelt craftsmanship and certified production.">
-    
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Poppins:wght@500;600;700;800&display=swap" rel="stylesheet">
-    
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
             theme: {
                 extend: {
-                    fontFamily: {
-                        sans: ['Inter', 'sans-serif'],
-                        heading: ['Poppins', 'sans-serif'],
-                    },
-                    colors: {
-                        brand: {
-                            bg: '#1a052b',
-                            bgLight: '#2c0e4a',
-                            gold: '#ffb700',
-                            goldLight: '#ffcc33',
-                            orange: '#ff8c00',
-                            purple: '#4b1b7a',
-                            purpleLight: '#7b1fa2'
-                        }
-                    },
-                    backgroundImage: {
-                        'gold-gradient': 'linear-gradient(145deg, #ffcc33, #ff8c00)',
-                        'purple-gradient': 'linear-gradient(145deg, #7b1fa2, #4b1b7a)',
-                    }
+                    fontFamily: { sans: ['Inter', 'sans-serif'], heading: ['Poppins', 'sans-serif'] },
+                    colors: { brand: { bg: '#1a052b', bgLight: '#2c0e4a', gold: '#ffb700', goldLight: '#ffcc33', orange: '#ff8c00', purple: '#4b1b7a', purpleLight: '#7b1fa2' } },
+                    backgroundImage: { 'gold-gradient': 'linear-gradient(145deg, #ffcc33, #ff8c00)', 'purple-gradient': 'linear-gradient(145deg, #7b1fa2, #4b1b7a)' }
                 }
             }
         }
@@ -42,10 +24,10 @@
 </head>
 <body class="antialiased confetti-bg flex flex-col min-h-screen">
 
-    <!-- Header & Navigation -->
     <header class="relative z-40">
-        <div class="top-bar bg-[#0a0212] py-2 px-4 sm:px-6 lg:px-8 flex justify-center sm:justify-start gap-6 text-sm text-gray-300">
+        <div class="top-bar bg-[#0a0212] py-2 px-4 sm:px-6 lg:px-8 flex justify-center sm:justify-start gap-6 text-sm text-gray-300 flex-wrap">
             <span class="flex items-center gap-2">📞 (082) 226-6483</span>
+            <span class="flex items-center gap-2">📱 +63 905-218-2190</span>
             <span class="flex items-center gap-2">✉️ info@jang-jangph.com</span>
         </div>
         <div class="bg-brand-bgLight/90 backdrop-blur-md sticky top-0 h-16 flex items-center justify-center">
@@ -70,14 +52,11 @@
     </header>
 
     <main class="flex-grow">
-        <!-- Hero Section -->
         <section id="home" class="pt-28 pb-20 px-4 sm:px-6 lg:px-8 text-center relative">
             <div class="max-w-4xl mx-auto">
                 <h2 class="text-2xl md:text-3xl font-heading font-medium text-brand-gold mb-2">Welcome to</h2>
                 <h1 class="text-5xl md:text-7xl font-heading font-bold text-white mb-6 drop-shadow-lg">Jang-Jang Bakeshop</h1>
-                <p class="text-xl md:text-2xl mb-4 text-white font-medium drop-shadow-md">
-                    Baked with Love, Crafted for Quality.
-                </p>
+                <p class="text-xl md:text-2xl mb-4 text-white font-medium drop-shadow-md">Baked with Love, Crafted for Quality.</p>
                 <p class="text-lg text-gray-300 mb-10 max-w-3xl mx-auto leading-relaxed">
                     From our ovens in Davao City to homes across the Philippines, Jang‑Jang Bakeshop brings you the perfect blend of tradition and innovation — from everyday breads and pastries to FDA‑certified delicacies like Biscocho and Otap.
                 </p>
@@ -88,50 +67,35 @@
             </div>
         </section>
 
-        <!-- 3-Card Layout (Fixed Hover & Routing) -->
         <section class="py-12 px-4 sm:px-6 lg:px-8 relative z-10">
             <div class="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8">
-                
                 <div id="about" class="mockup-card bg-gold-gradient text-brand-bg">
                     <div class="text-5xl mb-4">📖</div>
                     <h3 class="text-2xl font-heading font-bold mb-3">Our Story</h3>
                     <h4 class="font-bold text-sm uppercase tracking-wider mb-2 opacity-80">From Local Bakery to Certified Manufacturer</h4>
-                    <p class="text-sm font-medium leading-relaxed opacity-90">
-                        Jang‑Jang Bakeshop began as a humble neighborhood bakery known for its soft breads and heartwarming pastries. Over time, our passion for quality and consistency led us to expand into commercial manufacturing. Whether you’re buying wholesale or enjoying a fresh loaf from our shop, Jang‑Jang Bakeshop stands for one promise — every product is baked with love and made to last.
-                    </p>
+                    <p class="text-sm font-medium leading-relaxed opacity-90">Jang‑Jang Bakeshop began as a humble neighborhood bakery known for its soft breads and heartwarming pastries. Over time, our passion for quality and consistency led us to expand into commercial manufacturing. Whether you're buying wholesale or enjoying a fresh loaf from our shop, Jang‑Jang Bakeshop stands for one promise — every product is baked with love and made to last.</p>
                 </div>
-
                 <div class="mockup-card bg-purple-gradient text-white">
                     <div class="text-5xl mb-4">🧁</div>
                     <h3 class="text-2xl font-heading font-bold mb-3 text-brand-gold">Our Menu</h3>
                     <h4 class="font-bold text-sm uppercase tracking-wider mb-2 text-gray-300">Our Signature Creations</h4>
-                    <p class="text-sm leading-relaxed text-gray-200">
-                        View our full lineup of crafted delicacies below. From everyday breads and pastries to FDA‑certified delicacies, we bake daily to bring comfort and joy to every table.
-                    </p>
+                    <p class="text-sm leading-relaxed text-gray-200">View our full lineup of crafted delicacies below. From everyday breads and pastries to FDA‑certified delicacies, we bake daily to bring comfort and joy to every table.</p>
                     <a href="#products-grid" class="inline-block mt-6 btn-pill text-xs py-2 px-6">View Full Menu</a>
                 </div>
-
                 <div class="mockup-card bg-gold-gradient text-brand-bg">
                     <div class="text-5xl mb-4">🏅</div>
                     <h3 class="text-2xl font-heading font-bold mb-3">Quality Assurance</h3>
                     <h4 class="font-bold text-sm uppercase tracking-wider mb-2 opacity-80">Certified for Safety, Trusted for Taste</h4>
-                    <p class="text-sm font-medium leading-relaxed opacity-90 mb-4">
-                        Our FDA License to Operate (LTO No. 3000013388488) reflects our commitment to food safety and manufacturing excellence. We’re currently securing additional FDA certification for our upcoming snack line — ensuring that every Jang‑Jang product meets the highest standards.
-                    </p>
+                    <p class="text-sm font-medium leading-relaxed opacity-90 mb-4">Our FDA License to Operate (LTO No. 3000013388488) reflects our commitment to food safety and manufacturing excellence. We're currently securing additional FDA certification for our upcoming snack line — ensuring that every Jang‑Jang product meets the highest standards.</p>
                     <p class="font-bold text-sm uppercase">Your trust is our recipe for success.</p>
                 </div>
-
             </div>
         </section>
 
-        <!-- Freshly Baked Goodies / Products Grid -->
         <section id="products-grid" class="py-20 px-4 sm:px-6 lg:px-8 text-center relative">
             <h2 class="text-4xl md:text-5xl font-heading font-bold text-brand-gold mb-2">Freshly Baked Goodies</h2>
             <p class="text-xl text-white mb-16">See what's baking at Jang-Jang Bakeshop</p>
-            
             <div class="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                
-                <!-- Item 1: Biscocho -->
                 <a href="biscocho.html" class="product-card bg-brand-bgLight/50 p-6 rounded-2xl border border-brand-purple/50 gold-plate-wrapper flex flex-col justify-between group">
                     <div>
                         <div class="text-4xl mb-4 group-hover:scale-110 transition-transform">🍞</div>
@@ -140,8 +104,6 @@
                     </div>
                     <div class="gold-plate"></div>
                 </a>
-
-                <!-- Item 2: Otap -->
                 <a href="otap.html" class="product-card bg-brand-bgLight/50 p-6 rounded-2xl border border-brand-purple/50 gold-plate-wrapper flex flex-col justify-between group">
                     <div>
                         <div class="text-4xl mb-4 group-hover:scale-110 transition-transform">🥐</div>
@@ -150,8 +112,6 @@
                     </div>
                     <div class="gold-plate"></div>
                 </a>
-
-                <!-- Item 3: Flavored Banana Chips -->
                 <a href="banana-chips.html" class="product-card bg-brand-bgLight/50 p-6 rounded-2xl border border-brand-purple/50 gold-plate-wrapper flex flex-col justify-between group">
                     <div>
                         <div class="text-4xl mb-4 group-hover:scale-110 transition-transform">🍌</div>
@@ -161,8 +121,6 @@
                     </div>
                     <div class="gold-plate"></div>
                 </a>
-
-                <!-- Item 4: Peanut Brittle -->
                 <a href="peanut-brittle.html" class="product-card bg-brand-bgLight/50 p-6 rounded-2xl border border-brand-purple/50 gold-plate-wrapper flex flex-col justify-between group">
                     <div>
                         <div class="text-4xl mb-4 group-hover:scale-110 transition-transform">🥜</div>
@@ -172,8 +130,6 @@
                     </div>
                     <div class="gold-plate"></div>
                 </a>
-
-                <!-- Item 5: Breads -->
                 <a href="breads.html" class="product-card bg-brand-bgLight/50 p-6 rounded-2xl border border-brand-purple/50 gold-plate-wrapper flex flex-col justify-between group">
                     <div>
                         <div class="text-4xl mb-4 group-hover:scale-110 transition-transform">🥖</div>
@@ -182,8 +138,6 @@
                     </div>
                     <div class="gold-plate"></div>
                 </a>
-
-                <!-- Item 6: Pastries -->
                 <a href="pastries.html" class="product-card bg-brand-bgLight/50 p-6 rounded-2xl border border-brand-purple/50 gold-plate-wrapper flex flex-col justify-between group">
                     <div>
                         <div class="text-4xl mb-4 group-hover:scale-110 transition-transform">🧁</div>
@@ -192,35 +146,41 @@
                     </div>
                     <div class="gold-plate"></div>
                 </a>
-
             </div>
-            
             <div class="mt-16">
                 <a href="order.html" class="btn-pill">Wholesale Inquiry</a>
             </div>
         </section>
 
-        <!-- Contact Section -->
+        <!-- Contact Section (Updated with SMS numbers) -->
         <section id="contact" class="py-16 px-4 sm:px-6 lg:px-8 bg-brand-bgLight border-t border-brand-gold/20">
-            <div class="max-w-4xl mx-auto text-center">
-                <h2 class="text-3xl md:text-4xl font-heading font-bold text-brand-gold mb-6">Let’s Bake Something Together!</h2>
+            <div class="max-w-5xl mx-auto text-center">
+                <h2 class="text-3xl md:text-4xl font-heading font-bold text-brand-gold mb-6">Let's Bake Something Together!</h2>
                 <p class="text-lg text-white mb-10">Visit our shop in Davao City, or reach out for wholesale orders and inquiries.</p>
                 
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
                     <div class="bg-[#1a052b] p-6 rounded-xl flex flex-col items-center border border-brand-gold/10">
                         <span class="text-3xl mb-3">📍</span>
                         <h4 class="font-bold text-brand-gold mb-1">Address</h4>
                         <p class="text-sm text-gray-300">Purok 8, San Miguel, Brgy. Indangan, Buhangin District, Davao City</p>
                     </div>
                     <div class="bg-[#1a052b] p-6 rounded-xl flex flex-col items-center border border-brand-gold/10">
-                        <span class="text-3xl mb-3">📞</span>
-                        <h4 class="font-bold text-brand-gold mb-1">Phone</h4>
-                        <p class="text-sm text-gray-300">(082) 226-6483</p>
+                        <span class="text-3xl mb-3">☎️</span>
+                        <h4 class="font-bold text-brand-gold mb-1">Landline</h4>
+                        <p class="text-sm text-gray-300"><a href="tel:0822266483" class="hover:text-brand-gold">(082) 226-6483</a></p>
+                    </div>
+                    <div class="bg-[#1a052b] p-6 rounded-xl flex flex-col items-center border border-brand-gold/10">
+                        <span class="text-3xl mb-3">📱</span>
+                        <h4 class="font-bold text-brand-gold mb-1">SMS / Call</h4>
+                        <p class="text-sm text-gray-300">
+                            <a href="tel:+639052182190" class="hover:text-brand-gold block">+63 905-218-2190</a>
+                            <a href="tel:+639271421510" class="hover:text-brand-gold block">+63 927-142-1510</a>
+                        </p>
                     </div>
                     <div class="bg-[#1a052b] p-6 rounded-xl flex flex-col items-center border border-brand-gold/10">
                         <span class="text-3xl mb-3">✉️</span>
                         <h4 class="font-bold text-brand-gold mb-1">Email</h4>
-                        <p class="text-sm text-gray-300">info@jang-jangph.com</p>
+                        <p class="text-sm text-gray-300"><a href="mailto:info@jang-jangph.com" class="hover:text-brand-gold">info@jang-jangph.com</a></p>
                     </div>
                 </div>
 
@@ -233,21 +193,21 @@
         </section>
     </main>
 
-    <!-- Footer -->
     <footer class="bg-[#0a0212] text-gray-400 py-12 px-4 sm:px-6 lg:px-8 text-center border-t-4 border-brand-gold">
         <div class="max-w-4xl mx-auto">
             <h3 class="font-heading text-2xl font-bold text-brand-gold mb-4">Jang-Jang Bakeshop</h3>
-            <p class="text-sm opacity-80 mb-8 max-w-3xl mx-auto leading-relaxed text-gray-300">
-                Jang‑Jang Bakeshop bridges heartfelt craftsmanship and certified production — a brand that’s both family‑friendly and industry‑ready. The logo’s cheerful chef symbolizes warmth and trust, while the FDA credentials reinforce professionalism. Together, they tell a story of a bakery that grew from a local favorite into a proudly compliant manufacturer — proof that love and quality can rise together.
+            <p class="text-sm opacity-80 mb-6 max-w-3xl mx-auto leading-relaxed text-gray-300">
+                Jang‑Jang Bakeshop bridges heartfelt craftsmanship and certified production — a brand that's both family‑friendly and industry‑ready. The logo's cheerful chef symbolizes warmth and trust, while the FDA credentials reinforce professionalism.
             </p>
-            <div class="flex justify-center gap-6 mb-8 text-brand-gold">
-                <a href="https://www.facebook.com/OfficialJangJangBakeshop/" target="_blank" class="hover:text-white transition-colors">Facebook</a>
-                <a href="mailto:info@jang-jangph.com" class="hover:text-white transition-colors">Email</a>
-                <a href="tel:0822266483" class="hover:text-white transition-colors">Call Us</a>
+            <div class="flex flex-wrap justify-center gap-4 mb-8 text-brand-gold text-sm">
+                <a href="https://www.facebook.com/OfficialJangJangBakeshop/" target="_blank" class="contact-chip">📘 Facebook</a>
+                <a href="mailto:info@jang-jangph.com" class="contact-chip">✉️ info@jang-jangph.com</a>
+                <a href="tel:0822266483" class="contact-chip">☎️ (082) 226-6483</a>
+                <a href="tel:+639052182190" class="contact-chip">📱 +63 905-218-2190</a>
+                <a href="tel:+639271421510" class="contact-chip">📱 +63 927-142-1510</a>
             </div>
             <p class="text-xs opacity-60">&copy; 2026 Jang-Jang Bakeshop. All rights reserved.</p>
         </div>
     </footer>
-
 </body>
 </html>
