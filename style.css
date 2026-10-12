@@ -49,6 +49,7 @@ body {
     box-shadow: 0 4px 15px rgba(255, 183, 0, 0.4);
 }
 
+/* ── MOCKUP CARD (Fixed Hover Animation) ── */
 .mockup-card {
     border-radius: 24px;
     padding: 30px 20px;
@@ -58,17 +59,34 @@ body {
     position: relative;
     overflow: hidden;
     border: 1px solid rgba(255,255,255,0.1);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
 }
+
+/* Ensure the hover effect takes precedence over inline Tailwind classes */
 .mockup-card:hover {
-    transform: translateY(-8px);
-    box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+    transform: translateY(-10px) !important;
+    box-shadow: 0 25px 50px rgba(0,0,0,0.6);
+    z-index: 10;
 }
+
 .mockup-card::before {
     content: '';
     position: absolute;
     top: 0; left: 0; right: 0; bottom: 0;
     background: linear-gradient(180deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0) 100%);
     pointer-events: none;
+}
+
+/* ── PRODUCT CARD HOVER ── */
+.product-card {
+    transition: all 0.3s ease;
+}
+.product-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 15px 30px rgba(255, 183, 0, 0.2);
+    border-color: #ffb700;
 }
 
 .gold-plate-wrapper { position: relative; padding-bottom: 20px; }
@@ -99,8 +117,33 @@ body {
     letter-spacing: 0.5px;
     display: inline-block;
     text-align: center;
+    cursor: pointer;
+    border: none;
 }
 .btn-pill:hover {
     transform: scale(1.05);
     box-shadow: 0 8px 25px rgba(255, 136, 0, 0.6);
+}
+
+/* Form Input Styles */
+.form-input {
+    width: 100%;
+    padding: 12px;
+    border-radius: 8px;
+    border: 1px solid #4b1b7a;
+    background-color: #2c0e4a;
+    color: white;
+    margin-bottom: 15px;
+    font-family: 'Inter', sans-serif;
+}
+.form-input:focus {
+    outline: none;
+    border-color: #ffb700;
+    box-shadow: 0 0 0 2px rgba(255, 183, 0, 0.3);
+}
+.form-label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 600;
+    color: #ffcc33;
 }
