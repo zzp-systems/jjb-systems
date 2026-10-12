@@ -8,59 +8,26 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Poppins:wght@500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
     <script>
         tailwind.config = {
             theme: {
                 extend: {
                     fontFamily: { sans: ['Inter', 'sans-serif'], heading: ['Poppins', 'sans-serif'] },
-                    colors: {
-                        brand: { bg: '#1a052b', bgLight: '#2c0e4a', gold: '#ffb700', goldLight: '#ffcc33', orange: '#ff8c00', purple: '#4b1b7a', purpleLight: '#7b1fa2' }
-                    },
-                    backgroundImage: {
-                        'gold-gradient': 'linear-gradient(145deg, #ffcc33, #ff8c00)',
-                        'purple-gradient': 'linear-gradient(145deg, #7b1fa2, #4b1b7a)',
-                    }
+                    colors: { brand: { bg: '#1a052b', bgLight: '#2c0e4a', gold: '#ffb700', goldLight: '#ffcc33', orange: '#ff8c00', purple: '#4b1b7a', purpleLight: '#7b1fa2' } },
+                    backgroundImage: { 'gold-gradient': 'linear-gradient(145deg, #ffcc33, #ff8c00)', 'purple-gradient': 'linear-gradient(145deg, #7b1fa2, #4b1b7a)' }
                 }
             }
         }
     </script>
     <link rel="stylesheet" href="styles.css">
-    <style>
-        .order-container {
-            max-width: 800px;
-            margin: 0 auto;
-            background: rgba(44, 14, 74, 0.8);
-            border: 1px solid #4b1b7a;
-            border-radius: 24px;
-            padding: 40px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.5);
-        }
-        .price-display {
-            background: #1a052b;
-            border: 2px solid #ffb700;
-            border-radius: 12px;
-            padding: 20px;
-            text-align: center;
-            margin-top: 20px;
-        }
-        .bulk-message {
-            display: none;
-            background: #ff8c00;
-            color: #1a052b;
-            padding: 15px;
-            border-radius: 8px;
-            margin-top: 20px;
-            text-align: center;
-            font-weight: bold;
-        }
-    </style>
 </head>
 <body class="antialiased confetti-bg flex flex-col min-h-screen">
 
-    <!-- Header & Navigation -->
     <header class="relative z-40">
-        <div class="top-bar bg-[#0a0212] py-2 px-4 sm:px-6 lg:px-8 flex justify-center sm:justify-start gap-6 text-sm text-gray-300">
+        <div class="top-bar bg-[#0a0212] py-2 px-4 sm:px-6 lg:px-8 flex justify-center sm:justify-start gap-6 text-sm text-gray-300 flex-wrap">
             <span class="flex items-center gap-2">📞 (082) 226-6483</span>
+            <span class="flex items-center gap-2">📱 +63 905-218-2190</span>
             <span class="flex items-center gap-2">✉️ info@jang-jangph.com</span>
         </div>
         <div class="bg-brand-bgLight/90 backdrop-blur-md sticky top-0 h-16 flex items-center justify-center">
@@ -87,69 +54,99 @@
     <main class="flex-grow py-16 px-4 sm:px-6 lg:px-8">
         <div class="text-center mb-12">
             <h1 class="text-4xl md:text-5xl font-heading font-bold text-brand-gold mb-4">Place Your Order</h1>
-            <p class="text-xl text-gray-300">Select your products, choose your packaging, and we'll handle the rest.</p>
+            <p class="text-xl text-gray-300">Fill out the form below. We'll confirm your order via email or phone.</p>
         </div>
 
-        <div class="order-container">
+        <div class="max-w-3xl mx-auto" style="background: rgba(44, 14, 74, 0.8); border: 1px solid #4b1b7a; border-radius: 24px; padding: 40px; box-shadow: 0 20px 40px rgba(0,0,0,0.5);">
             <form id="orderForm" onsubmit="handleOrder(event)">
-                <!-- Product Selection -->
-                <div class="mb-6">
-                    <label for="product" class="form-label">Select Product</label>
-                    <select id="product" class="form-input" onchange="updateForm()">
+                
+                <!-- SECTION 1: CUSTOMER DETAILS -->
+                <div class="form-section">
+                    <h2 class="form-section-title">👤 Customer Details</h2>
+                    
+                    <label for="customerName" class="form-label">Person's / Store's Name *</label>
+                    <input type="text" id="customerName" name="customerName" class="form-input" placeholder="e.g., Juan Dela Cruz / ABC Sari-Sari Store" required>
+                    <span class="form-helper">Enter your full name or business/store name</span>
+
+                    <label for="customerEmail" class="form-label">Email Address *</label>
+                    <input type="email" id="customerEmail" name="customerEmail" class="form-input" placeholder="you@example.com" required>
+                    <span class="form-helper">We'll send your order confirmation here</span>
+
+                    <label for="customerPhone" class="form-label">Mobile Number *</label>
+                    <input type="tel" id="customerPhone" name="customerPhone" class="form-input" placeholder="+63 9XX XXX XXXX" required>
+                    <span class="form-helper">For delivery coordination and order updates</span>
+                </div>
+
+                <!-- SECTION 2: DELIVERY DETAILS -->
+                <div class="form-section">
+                    <h2 class="form-section-title">📍 Delivery Details</h2>
+                    
+                    <label for="deliveryAddress" class="form-label">Complete Delivery Address *</label>
+                    <textarea id="deliveryAddress" name="deliveryAddress" class="form-input" rows="3" placeholder="House/Unit No., Street, Barangay, City/Municipality, Province, ZIP Code" required></textarea>
+                    <span class="form-helper">Please be as specific as possible for accurate delivery</span>
+
+                    <label for="mapLink" class="form-label">Google Maps Pinned Location (Optional)</label>
+                    <input type="url" id="mapLink" name="mapLink" class="form-input" placeholder="https://maps.app.goo.gl/... or https://goo.gl/maps/...">
+                    <span class="form-helper">Paste your Google Maps share link so our rider can easily find your location. Open Google Maps → Long-press your location → Tap "Share" → Copy link.</span>
+                </div>
+
+                <!-- SECTION 3: ORDER DETAILS -->
+                <div class="form-section">
+                    <h2 class="form-section-title">🛒 Order Details</h2>
+
+                    <label for="product" class="form-label">Select Product *</label>
+                    <select id="product" name="product" class="form-input" onchange="updateForm()" required>
                         <option value="" disabled selected>-- Choose a Product --</option>
-                        <option value="otap">Otap - ₱70 / pack</option>
-                        <option value="biscocho">Biscocho - ₱125 / pack</option>
-                        <option value="banana">Flavored Banana Chips - ₱70 / pack</option>
-                        <option value="peanut">Peanut Brittle - ₱120 / pack (4 discs)</option>
+                        <option value="otap">Otap — ₱70 / pack</option>
+                        <option value="biscocho">Biscocho — ₱125 / pack</option>
+                        <option value="banana">Flavored Banana Chips — ₱70 / pack</option>
+                        <option value="peanut">Peanut Brittle — ₱120 / pack (4 discs)</option>
                     </select>
-                </div>
 
-                <!-- Flavor Selection (Only for Banana Chips) -->
-                <div class="mb-6" id="flavorGroup" style="display: none;">
-                    <label for="flavor" class="form-label">Select Flavor (Banana Chips)</label>
-                    <select id="flavor" class="form-input">
-                        <option value="Sweetened">Sweetened</option>
-                        <option value="Unsweetened">Unsweetened</option>
-                        <option value="Sour Cream">Sour Cream</option>
-                        <option value="Cheese">Cheese</option>
-                    </select>
-                </div>
+                    <div class="mb-4" id="flavorGroup" style="display: none;">
+                        <label for="flavor" class="form-label">Select Flavor (Banana Chips) *</label>
+                        <select id="flavor" name="flavor" class="form-input">
+                            <option value="Sweetened">Sweetened</option>
+                            <option value="Unsweetened">Unsweetened</option>
+                            <option value="Sour Cream">Sour Cream</option>
+                            <option value="Cheese">Cheese</option>
+                        </select>
+                    </div>
 
-                <!-- Packaging Selection -->
-                <div class="mb-6">
-                    <label for="unit" class="form-label">Select Packaging</label>
-                    <select id="unit" class="form-input" onchange="calculatePrice()">
+                    <label for="unit" class="form-label">Select Packaging *</label>
+                    <select id="unit" name="unit" class="form-input" onchange="calculatePrice()" required>
                         <option value="pack">By Pack</option>
                         <option value="box">By Box</option>
                     </select>
-                </div>
 
-                <!-- Quantity -->
-                <div class="mb-6">
-                    <label for="quantity" class="form-label">Quantity</label>
-                    <input type="number" id="quantity" class="form-input" min="1" value="1" oninput="calculatePrice()">
-                    <p id="quantityHint" class="text-sm text-gray-400 mt-1"></p>
-                </div>
+                    <label for="quantity" class="form-label">Quantity *</label>
+                    <input type="number" id="quantity" name="quantity" class="form-input" min="1" value="1" oninput="calculatePrice()" required>
+                    <span class="form-helper" id="quantityHint"></span>
 
-                <!-- Price Display -->
-                <div class="price-display">
-                    <p class="text-gray-300 text-sm mb-1">Estimated Total</p>
-                    <p id="totalPrice" class="text-4xl font-heading font-bold text-brand-gold">₱0.00</p>
+                    <!-- Price Display -->
+                    <div style="background: #1a052b; border: 2px solid #ffb700; border-radius: 12px; padding: 20px; text-align: center; margin-top: 20px;">
+                        <p class="text-gray-300 text-sm mb-1">Estimated Total</p>
+                        <p id="totalPrice" class="text-4xl font-heading font-bold text-brand-gold">₱0.00</p>
+                    </div>
                 </div>
 
                 <!-- Bulk Order Message -->
-                <div id="bulkMessage" class="bulk-message">
+                <div id="bulkMessage" style="display: none; background: #ff8c00; color: #1a052b; padding: 20px; border-radius: 12px; margin-top: 20px; text-align: center; font-weight: bold;">
                     ⚠️ For bulk orders beyond 5 boxes, please contact our sales team for discounted pricing:
                     <br><br>
-                    📞 (082) 226-6483 <br>
-                    ✉️ info@jang-jangph.com <br>
-                    📘 <a href="https://www.facebook.com/OfficialJangJangBakeshop/" target="_blank" class="underline text-[#1a052b]">Facebook Page</a>
+                    📞 Landline: <a href="tel:0822266483" class="underline">(082) 226-6483</a><br>
+                    📱 SMS/Call: <a href="tel:+639052182190" class="underline">+63 905-218-2190</a> / <a href="tel:+639271421510" class="underline">+63 927-142-1510</a><br>
+                    ✉️ Email: <a href="mailto:info@jang-jangph.com" class="underline">info@jang-jangph.com</a><br>
+                    📘 Facebook: <a href="https://www.facebook.com/OfficialJangJangBakeshop/" target="_blank" class="underline">OfficialJangJangBakeshop</a>
                 </div>
 
                 <!-- Submit Button -->
                 <div class="mt-8 text-center">
                     <button type="submit" id="submitBtn" class="btn-pill w-full md:w-auto">Submit Order</button>
                 </div>
+
+                <!-- Status Message -->
+                <div id="statusMessage" style="display: none; padding: 15px; border-radius: 8px; margin-top: 20px; text-align: center; font-weight: bold;"></div>
             </form>
         </div>
     </main>
@@ -157,19 +154,30 @@
     <footer class="bg-[#0a0212] text-gray-400 py-12 px-4 sm:px-6 lg:px-8 text-center border-t-4 border-brand-gold mt-12">
         <div class="max-w-4xl mx-auto">
             <h3 class="font-heading text-2xl font-bold text-brand-gold mb-4">Jang-Jang Bakeshop</h3>
-            <p class="text-sm opacity-80 mb-8 max-w-3xl mx-auto leading-relaxed text-gray-300">
-                Bridging heartfelt craftsmanship and certified production. A brand that’s both family-friendly and industry-ready.
-            </p>
-            <div class="flex justify-center gap-6 mb-8 text-brand-gold">
-                <a href="https://www.facebook.com/OfficialJangJangBakeshop/" target="_blank" class="hover:text-white transition-colors">Facebook</a>
-                <a href="mailto:info@jang-jangph.com" class="hover:text-white transition-colors">Email</a>
-                <a href="tel:0822266483" class="hover:text-white transition-colors">Call Us</a>
+            <div class="flex flex-wrap justify-center gap-4 mb-8 text-brand-gold text-sm">
+                <a href="https://www.facebook.com/OfficialJangJangBakeshop/" target="_blank" class="contact-chip">📘 Facebook</a>
+                <a href="mailto:info@jang-jangph.com" class="contact-chip">✉️ info@jang-jangph.com</a>
+                <a href="tel:0822266483" class="contact-chip">☎️ (082) 226-6483</a>
+                <a href="tel:+639052182190" class="contact-chip">📱 +63 905-218-2190</a>
+                <a href="tel:+639271421510" class="contact-chip">📱 +63 927-142-1510</a>
             </div>
             <p class="text-xs opacity-60">&copy; 2026 Jang-Jang Bakeshop. All rights reserved.</p>
         </div>
     </footer>
 
     <script>
+        // ═══════════════════════════════════════════════════════════════
+        // EMAILJS CONFIGURATION (Your Credentials)
+        // ═══════════════════════════════════════════════════════════════
+        const EMAILJS_SERVICE_ID = "service_wpvv0me";
+        const EMAILJS_TEMPLATE_ID = "template_wzva4ly";
+        const EMAILJS_PUBLIC_KEY = "BjUNSZJEt29Q7Slwn";
+        
+        emailjs.init(EMAILJS_PUBLIC_KEY);
+
+        // ═══════════════════════════════════════════════════════════════
+        // PRODUCT CONFIGURATION
+        // ═══════════════════════════════════════════════════════════════
         const products = {
             otap: { name: 'Otap', price: 70, boxCount: 50, hasFlavor: false },
             biscocho: { name: 'Biscocho', price: 125, boxCount: 50, hasFlavor: false },
@@ -187,23 +195,14 @@
                 quantityHint.textContent = '';
                 return;
             }
-
             const product = products[productId];
+            flavorGroup.style.display = product.hasFlavor ? 'block' : 'none';
 
-            // Show/Hide Flavor Selection
-            if (product.hasFlavor) {
-                flavorGroup.style.display = 'block';
-            } else {
-                flavorGroup.style.display = 'none';
-            }
-
-            // Update Quantity Hint
             if (document.getElementById('unit').value === 'box') {
                 quantityHint.textContent = `1 box = ${product.boxCount} packs`;
             } else {
                 quantityHint.textContent = '';
             }
-
             calculatePrice();
         }
 
@@ -219,22 +218,12 @@
                 document.getElementById('submitBtn').style.opacity = '1';
                 return;
             }
-
             const product = products[productId];
-            let total = 0;
-
-            if (unit === 'box') {
-                total = product.price * product.boxCount * quantity;
-            } else {
-                total = product.price * quantity;
-            }
-
+            let total = (unit === 'box') ? product.price * product.boxCount * quantity : product.price * quantity;
             document.getElementById('totalPrice').textContent = `₱${total.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
-            // Bulk Order Logic (More than 5 boxes)
             const bulkMessage = document.getElementById('bulkMessage');
             const submitBtn = document.getElementById('submitBtn');
-
             if (unit === 'box' && quantity > 5) {
                 bulkMessage.style.display = 'block';
                 submitBtn.disabled = true;
@@ -251,6 +240,10 @@
         function handleOrder(event) {
             event.preventDefault();
             
+            const submitBtn = document.getElementById('submitBtn');
+            const statusMessage = document.getElementById('statusMessage');
+            const originalBtnText = submitBtn.textContent;
+            
             const productId = document.getElementById('product').value;
             const unit = document.getElementById('unit').value;
             const quantity = parseInt(document.getElementById('quantity').value) || 0;
@@ -261,26 +254,64 @@
                 return;
             }
 
-            let flavorText = '';
-            if (product.hasFlavor) {
-                flavorText = ` (Flavor: ${document.getElementById('flavor').value})`;
-            }
-
+            const flavorText = product.hasFlavor ? document.getElementById('flavor').value : 'N/A';
             const total = document.getElementById('totalPrice').textContent;
-            
-            alert(`Order Summary:\n\nProduct: ${product.name}${flavorText}\nPackaging: ${unit === 'box' ? 'Box' : 'Pack'}\nQuantity: ${quantity}\nTotal: ${total}\n\nThank you! Your order request has been submitted. We will contact you shortly to confirm.`);
-            
-            // In a real implementation, you would send this data to a backend or email service.
-            // For now, we just show a success message.
-            document.getElementById('orderForm').reset();
-            updateForm();
-            document.getElementById('totalPrice').textContent = '₱0.00';
+            const orderId = 'JJB-' + Date.now().toString().slice(-8);
+
+            // Collect all form data
+            const templateParams = {
+                order_id: orderId,
+                customer_name: document.getElementById('customerName').value,
+                customer_email: document.getElementById('customerEmail').value,
+                customer_phone: document.getElementById('customerPhone').value,
+                delivery_address: document.getElementById('deliveryAddress').value,
+                map_link: document.getElementById('mapLink').value || 'Not provided',
+                product_name: product.name,
+                flavor: flavorText,
+                packaging: unit === 'box' ? 'Box' : 'Pack',
+                quantity: quantity,
+                unit_price: `₱${product.price.toFixed(2)}`,
+                total_price: total,
+                order_date: new Date().toLocaleString('en-PH', { timeZone: 'Asia/Manila' })
+            };
+
+            // Loading state
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Sending Order...';
+            submitBtn.style.opacity = '0.7';
+
+            // Send via EmailJS
+            emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, templateParams)
+                .then(function(response) {
+                    console.log('SUCCESS!', response.status, response.text);
+                    statusMessage.style.display = 'block';
+                    statusMessage.style.background = '#1E7A3E';
+                    statusMessage.style.color = '#FFFFFF';
+                    statusMessage.innerHTML = `✅ Order <strong>${orderId}</strong> submitted successfully!<br>We'll contact you shortly to confirm your order.`;
+                    
+                    document.getElementById('orderForm').reset();
+                    updateForm();
+                    document.getElementById('totalPrice').textContent = '₱0.00';
+                    
+                    submitBtn.textContent = originalBtnText;
+                    submitBtn.disabled = false;
+                    submitBtn.style.opacity = '1';
+                    
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                }, function(error) {
+                    console.error('FAILED...', error);
+                    statusMessage.style.display = 'block';
+                    statusMessage.style.background = '#C0392B';
+                    statusMessage.style.color = '#FFFFFF';
+                    statusMessage.innerHTML = `❌ There was an issue submitting your order.<br>Please try again or contact us directly at <strong>+63 905-218-2190</strong>.`;
+                    
+                    submitBtn.textContent = originalBtnText;
+                    submitBtn.disabled = false;
+                    submitBtn.style.opacity = '1';
+                });
         }
 
-        // Initialize hints on load
-        document.addEventListener('DOMContentLoaded', () => {
-            updateForm();
-        });
+        document.addEventListener('DOMContentLoaded', updateForm);
     </script>
 </body>
 </html>
