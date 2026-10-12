@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Otap | Jang-Jang Bakeshop</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Poppins:wght@500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'], heading: ['Poppins', 'sans-serif'] },
+                    colors: {
+                        brand: { bg: '#1a052b', bgLight: '#2c0e4a', gold: '#ffb700', goldLight: '#ffcc33', orange: '#ff8c00', purple: '#4b1b7a', purpleLight: '#7b1fa2' }
+                    },
+                    backgroundImage: {
+                        'gold-gradient': 'linear-gradient(145deg, #ffcc33, #ff8c00)',
+                        'purple-gradient': 'linear-gradient(145deg, #7b1fa2, #4b1b7a)',
+                    }
+                }
+            }
+        }
+    </script>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body class="antialiased confetti-bg flex flex-col min-h-screen">
+
+    <header class="relative z-40">
+        <div class="top-bar bg-[#0a0212] py-2 px-4 sm:px-6 lg:px-8 flex justify-center sm:justify-start gap-6 text-sm text-gray-300">
+            <span class="flex items-center gap-2">📞 +63 927 526 9774</span>
+            <span class="flex items-center gap-2">✉️ jjb.angelisun@gmail.com</span>
+        </div>
+        <div class="bg-brand-bgLight/90 backdrop-blur-md sticky top-0 h-16 flex items-center justify-center">
+            <div class="logo-wrapper">
+                <img src="https://raw.githubusercontent.com/zzp-systems/jjb-systems/refs/heads/main/jjb-logo-transaparent.png" alt="Jang-Jang Bakeshop Logo" class="w-full h-full object-contain rounded-full">
+            </div>
+            <nav class="flex gap-2 md:gap-16 lg:gap-24 font-heading font-semibold text-white px-4 w-full max-w-6xl justify-between md:justify-center text-xs md:text-base">
+                <div class="flex gap-2 md:gap-8 z-10">
+                    <a href="index.html" class="hover:text-brand-gold transition-colors">Home</a>
+                    <a href="index.html#about" class="hover:text-brand-gold transition-colors">About Us</a>
+                    <a href="index.html#products-grid" class="hover:text-brand-gold transition-colors">Products</a>
+                </div>
+                <div class="flex gap-2 md:gap-8 z-10">
+                    <a href="compliance.html" class="hover:text-brand-gold transition-colors">Compliance</a>
+                    <a href="sops.html" class="hover:text-brand-gold transition-colors">SOPs</a>
+                    <a href="index.html#contact" class="hover:text-brand-gold transition-colors">Contact</a>
+                </div>
+            </nav>
+        </div>
+        <div class="gold-ribbon"></div>
+    </header>
+
+    <main class="flex-grow py-16 px-4 sm:px-6 lg:px-8 max-w-5xl mx-auto w-full">
+        <div class="flex flex-col md:flex-row items-center gap-12 mb-16">
+            <div class="w-full md:w-1/2">
+                <span class="text-brand-gold font-bold tracking-wider uppercase text-sm mb-2 block">Signature Creation</span>
+                <h1 class="text-5xl md:text-6xl font-heading font-bold text-white mb-6">Otap</h1>
+                <p class="text-xl text-gray-300 leading-relaxed mb-8">
+                    A traditional Filipino sweet puff pastry biscuit, internationally recognized for its distinct oval shape, golden-brown layered topography, and high friability.
+                </p>
+                <div class="flex gap-4">
+                    <a href="index.html#contact" class="btn-pill">Order Now</a>
+                    <a href="compliance.html" class="bg-transparent border-2 border-brand-gold text-brand-gold hover:bg-brand-gold hover:text-brand-bg font-heading font-bold py-3 px-8 rounded-full transition-colors uppercase tracking-wide text-center">View CPR</a>
+                </div>
+            </div>
+            <div class="w-full md:w-1/2 flex justify-center">
+                <div class="bg-brand-bgLight/50 p-12 rounded-full border-4 border-brand-gold shadow-[0_0_50px_rgba(255,183,0,0.3)]">
+                    <span class="text-9xl">🥐</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-16">
+            <div class="bg-brand-bgLight/30 p-8 rounded-2xl border border-brand-purple/30">
+                <h2 class="text-2xl font-heading font-bold text-brand-gold mb-4">Product Specifications</h2>
+                <ul class="space-y-3 text-gray-300">
+                    <li><strong class="text-white">SKU:</strong> OTP-001</li>
+                    <li><strong class="text-white">Packaging:</strong> 6x10 PP (Primary flow wrap: 2 pcs; Secondary: 7 wraps; Tertiary: 50 packs/box)</li>
+                    <li><strong class="text-white">Net Weight:</strong> Approx. 190-200g per secondary pack</li>
+                    <li><strong class="text-white">Shelf Life:</strong> 4 months under ambient storage</li>
+                    <li><strong class="text-white">Allergens:</strong> Contains Wheat, Milk, Egg</li>
+                </ul>
+            </div>
+            <div class="bg-brand-bgLight/30 p-8 rounded-2xl border border-brand-purple/30">
+                <h2 class="text-2xl font-heading font-bold text-brand-gold mb-4">Key Ingredients</h2>
+                <p class="text-gray-300 mb-4">Crafted with precision using high-quality ingredients to achieve the perfect flaky texture.</p>
+                <ul class="list-disc list-inside text-gray-300 space-y-2">
+                    <li>1st Class & 3rd Class Wheat Flour</li>
+                    <li>Refined White & Brown Sugar</li>
+                    <li>Unsalted Butter & Vegetable Shortening</li>
+                    <li>Iodized Salt (per RA 8172)</li>
+                    <li>Instant Dry Yeast</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="bg-gradient-to-r from-brand-purple/40 to-brand-bgLight/40 p-8 rounded-2xl border border-brand-gold/30 text-center">
+            <h3 class="text-xl font-heading font-bold text-brand-gold mb-2">FDA Certified Quality</h3>
+            <p class="text-gray-300 max-w-3xl mx-auto">
+                Jang-Jang Bakeshop's Otap is registered under FDA Certificate of Product Registration (CPR) No. FR-4000015502885. Our manufacturing processes strictly adhere to cGMP and HACCP protocols to ensure every batch meets the highest safety and quality standards.
+            </p>
+            <a href="compliance.html" class="inline-block mt-4 text-brand-gold hover:text-white transition-colors underline">View Compliance Documentation &rarr;</a>
+        </div>
+    </main>
+
+    <footer class="bg-[#0a0212] text-gray-400 py-12 px-4 sm:px-6 lg:px-8 text-center border-t-4 border-brand-gold">
+        <div class="max-w-4xl mx-auto">
+            <h3 class="font-heading text-2xl font-bold text-brand-gold mb-4">Jang-Jang Bakeshop</h3>
+            <p class="text-sm opacity-80 mb-8 max-w-3xl mx-auto leading-relaxed text-gray-300">
+                Bridging heartfelt craftsmanship and certified production. A brand that’s both family-friendly and industry-ready.
+            </p>
+            <p class="text-xs opacity-60">&copy; 2026 Jang-Jang Bakeshop. All rights reserved.</p>
+        </div>
+    </footer>
+
+</body>
+</html>
