@@ -223,6 +223,21 @@
         let cart = [];
 
         // ═══════════════════════════════════════════════════════════════
+        // SAFETY HELPER — Sanitize user input before sending to EmailJS
+        // Prevents "dynamic variables are corrupted" errors caused by
+        // unescaped special characters (&, <, >, ", ')
+        // ═══════════════════════════════════════════════════════════════
+        function encode(str) {
+            if (str === null || str === undefined) return '';
+            return str.toString()
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+
+        // ═══════════════════════════════════════════════════════════════
         // ORDER BUILDER LOGIC
         // ═══════════════════════════════════════════════════════════════
 
@@ -430,15 +445,19 @@
                 </table>
             `;
 
+            // ═══════════════════════════════════════════════════════════════
+            // SAFETY TWEAK — Sanitize user input & use ASCII-safe total
+            // This prevents the "dynamic variables are corrupted" error.
+            // ═══════════════════════════════════════════════════════════════
             const templateParams = {
                 order_id: orderId,
-                customer_name: document.getElementById('customerName').value,
-                customer_email: document.getElementById('customerEmail').value,
-                customer_phone: document.getElementById('customerPhone').value,
-                delivery_address: document.getElementById('deliveryAddress').value,
+                customer_name: encode(document.getElementById('customerName').value),
+                customer_email: encode(document.getElementById('customerEmail').value),
+                customer_phone: encode(document.getElementById('customerPhone').value),
+                delivery_address: encode(document.getElementById('deliveryAddress').value),
                 map_link: document.getElementById('mapLink').value || 'Not provided',
-                order_items_html: itemsHtml,
-                total_price: `₱${grandTotal.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+                order_items_html: itemsHtml, // Already HTML, no need to encode
+                total_price: `PHP ${grandTotal.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, // ASCII-safe prefix
                 total_items: cart.length,
                 order_date: new Date().toLocaleString('en-PH', { timeZone: 'Asia/Manila' })
             };
