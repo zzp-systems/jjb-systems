@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Order Now | Jang-Jang Bakeshop</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Poppins:wght@500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'], heading: ['Poppins', 'sans-serif'] },
+                    colors: {
+                        brand: { bg: '#1a052b', bgLight: '#2c0e4a', gold: '#ffb700', goldLight: '#ffcc33', orange: '#ff8c00', purple: '#4b1b7a', purpleLight: '#7b1fa2' }
+                    },
+                    backgroundImage: {
+                        'gold-gradient': 'linear-gradient(145deg, #ffcc33, #ff8c00)',
+                        'purple-gradient': 'linear-gradient(145deg, #7b1fa2, #4b1b7a)',
+                    }
+                }
+            }
+        }
+    </script>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .order-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: rgba(44, 14, 74, 0.8);
+            border: 1px solid #4b1b7a;
+            border-radius: 24px;
+            padding: 40px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+        }
+        .price-display {
+            background: #1a052b;
+            border: 2px solid #ffb700;
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            margin-top: 20px;
+        }
+        .bulk-message {
+            display: none;
+            background: #ff8c00;
+            color: #1a052b;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            text-align: center;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body class="antialiased confetti-bg flex flex-col min-h-screen">
+
+    <!-- Header & Navigation -->
+    <header class="relative z-40">
+        <div class="top-bar bg-[#0a0212] py-2 px-4 sm:px-6 lg:px-8 flex justify-center sm:justify-start gap-6 text-sm text-gray-300">
+            <span class="flex items-center gap-2">📞 (082) 226-6483</span>
+            <span class="flex items-center gap-2">✉️ info@jang-jangph.com</span>
+        </div>
+        <div class="bg-brand-bgLight/90 backdrop-blur-md sticky top-0 h-16 flex items-center justify-center">
+            <div class="logo-wrapper">
+                <img src="https://raw.githubusercontent.com/zzp-systems/jjb-systems/refs/heads/main/jjb-logo-transaparent.png" alt="Jang-Jang Bakeshop Logo" class="w-full h-full object-contain rounded-full">
+            </div>
+            <nav class="flex gap-2 md:gap-16 lg:gap-24 font-heading font-semibold text-white px-4 w-full max-w-6xl justify-between md:justify-center text-xs md:text-base">
+                <div class="flex gap-2 md:gap-8 z-10">
+                    <a href="index.html" class="hover:text-brand-gold transition-colors">Home</a>
+                    <a href="index.html#about" class="hover:text-brand-gold transition-colors">About Us</a>
+                    <a href="index.html#products-grid" class="hover:text-brand-gold transition-colors">Products</a>
+                </div>
+                <div class="flex gap-2 md:gap-8 z-10">
+                    <a href="order.html" class="text-brand-gold border-b-2 border-brand-gold pb-1">Order Now</a>
+                    <a href="compliance.html" class="hover:text-brand-gold transition-colors">Compliance</a>
+                    <a href="sops.html" class="hover:text-brand-gold transition-colors">SOPs</a>
+                    <a href="index.html#contact" class="hover:text-brand-gold transition-colors">Contact</a>
+                </div>
+            </nav>
+        </div>
+        <div class="gold-ribbon"></div>
+    </header>
+
+    <main class="flex-grow py-16 px-4 sm:px-6 lg:px-8">
+        <div class="text-center mb-12">
+            <h1 class="text-4xl md:text-5xl font-heading font-bold text-brand-gold mb-4">Place Your Order</h1>
+            <p class="text-xl text-gray-300">Select your products, choose your packaging, and we'll handle the rest.</p>
+        </div>
+
+        <div class="order-container">
+            <form id="orderForm" onsubmit="handleOrder(event)">
+                <!-- Product Selection -->
+                <div class="mb-6">
+                    <label for="product" class="form-label">Select Product</label>
+                    <select id="product" class="form-input" onchange="updateForm()">
+                        <option value="" disabled selected>-- Choose a Product --</option>
+                        <option value="otap">Otap - ₱70 / pack</option>
+                        <option value="biscocho">Biscocho - ₱125 / pack</option>
+                        <option value="banana">Flavored Banana Chips - ₱70 / pack</option>
+                        <option value="peanut">Peanut Brittle - ₱120 / pack (4 discs)</option>
+                    </select>
+                </div>
+
+                <!-- Flavor Selection (Only for Banana Chips) -->
+                <div class="mb-6" id="flavorGroup" style="display: none;">
+                    <label for="flavor" class="form-label">Select Flavor (Banana Chips)</label>
+                    <select id="flavor" class="form-input">
+                        <option value="Sweetened">Sweetened</option>
+                        <option value="Unsweetened">Unsweetened</option>
+                        <option value="Sour Cream">Sour Cream</option>
+                        <option value="Cheese">Cheese</option>
+                    </select>
+                </div>
+
+                <!-- Packaging Selection -->
+                <div class="mb-6">
+                    <label for="unit" class="form-label">Select Packaging</label>
+                    <select id="unit" class="form-input" onchange="calculatePrice()">
+                        <option value="pack">By Pack</option>
+                        <option value="box">By Box</option>
+                    </select>
+                </div>
+
+                <!-- Quantity -->
+                <div class="mb-6">
+                    <label for="quantity" class="form-label">Quantity</label>
+                    <input type="number" id="quantity" class="form-input" min="1" value="1" oninput="calculatePrice()">
+                    <p id="quantityHint" class="text-sm text-gray-400 mt-1"></p>
+                </div>
+
+                <!-- Price Display -->
+                <div class="price-display">
+                    <p class="text-gray-300 text-sm mb-1">Estimated Total</p>
+                    <p id="totalPrice" class="text-4xl font-heading font-bold text-brand-gold">₱0.00</p>
+                </div>
+
+                <!-- Bulk Order Message -->
+                <div id="bulkMessage" class="bulk-message">
+                    ⚠️ For bulk orders beyond 5 boxes, please contact our sales team for discounted pricing:
+                    <br><br>
+                    📞 (082) 226-6483 <br>
+                    ✉️ info@jang-jangph.com <br>
+                    📘 <a href="https://www.facebook.com/OfficialJangJangBakeshop/" target="_blank" class="underline text-[#1a052b]">Facebook Page</a>
+                </div>
+
+                <!-- Submit Button -->
+                <div class="mt-8 text-center">
+                    <button type="submit" id="submitBtn" class="btn-pill w-full md:w-auto">Submit Order</button>
+                </div>
+            </form>
+        </div>
+    </main>
+
+    <footer class="bg-[#0a0212] text-gray-400 py-12 px-4 sm:px-6 lg:px-8 text-center border-t-4 border-brand-gold mt-12">
+        <div class="max-w-4xl mx-auto">
+            <h3 class="font-heading text-2xl font-bold text-brand-gold mb-4">Jang-Jang Bakeshop</h3>
+            <p class="text-sm opacity-80 mb-8 max-w-3xl mx-auto leading-relaxed text-gray-300">
+                Bridging heartfelt craftsmanship and certified production. A brand that’s both family-friendly and industry-ready.
+            </p>
+            <div class="flex justify-center gap-6 mb-8 text-brand-gold">
+                <a href="https://www.facebook.com/OfficialJangJangBakeshop/" target="_blank" class="hover:text-white transition-colors">Facebook</a>
+                <a href="mailto:info@jang-jangph.com" class="hover:text-white transition-colors">Email</a>
+                <a href="tel:0822266483" class="hover:text-white transition-colors">Call Us</a>
+            </div>
+            <p class="text-xs opacity-60">&copy; 2026 Jang-Jang Bakeshop. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script>
+        const products = {
+            otap: { name: 'Otap', price: 70, boxCount: 50, hasFlavor: false },
+            biscocho: { name: 'Biscocho', price: 125, boxCount: 50, hasFlavor: false },
+            banana: { name: 'Flavored Banana Chips', price: 70, boxCount: 50, hasFlavor: true },
+            peanut: { name: 'Peanut Brittle', price: 120, boxCount: 105, hasFlavor: false }
+        };
+
+        function updateForm() {
+            const productId = document.getElementById('product').value;
+            const flavorGroup = document.getElementById('flavorGroup');
+            const quantityHint = document.getElementById('quantityHint');
+            
+            if (!productId) {
+                flavorGroup.style.display = 'none';
+                quantityHint.textContent = '';
+                return;
+            }
+
+            const product = products[productId];
+
+            // Show/Hide Flavor Selection
+            if (product.hasFlavor) {
+                flavorGroup.style.display = 'block';
+            } else {
+                flavorGroup.style.display = 'none';
+            }
+
+            // Update Quantity Hint
+            if (document.getElementById('unit').value === 'box') {
+                quantityHint.textContent = `1 box = ${product.boxCount} packs`;
+            } else {
+                quantityHint.textContent = '';
+            }
+
+            calculatePrice();
+        }
+
+        function calculatePrice() {
+            const productId = document.getElementById('product').value;
+            const unit = document.getElementById('unit').value;
+            const quantity = parseInt(document.getElementById('quantity').value) || 0;
+
+            if (!productId || quantity <= 0) {
+                document.getElementById('totalPrice').textContent = '₱0.00';
+                document.getElementById('bulkMessage').style.display = 'none';
+                document.getElementById('submitBtn').disabled = false;
+                document.getElementById('submitBtn').style.opacity = '1';
+                return;
+            }
+
+            const product = products[productId];
+            let total = 0;
+
+            if (unit === 'box') {
+                total = product.price * product.boxCount * quantity;
+            } else {
+                total = product.price * quantity;
+            }
+
+            document.getElementById('totalPrice').textContent = `₱${total.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+            // Bulk Order Logic (More than 5 boxes)
+            const bulkMessage = document.getElementById('bulkMessage');
+            const submitBtn = document.getElementById('submitBtn');
+
+            if (unit === 'box' && quantity > 5) {
+                bulkMessage.style.display = 'block';
+                submitBtn.disabled = true;
+                submitBtn.style.opacity = '0.5';
+                submitBtn.textContent = 'Contact Sales for Bulk Orders';
+            } else {
+                bulkMessage.style.display = 'none';
+                submitBtn.disabled = false;
+                submitBtn.style.opacity = '1';
+                submitBtn.textContent = 'Submit Order';
+            }
+        }
+
+        function handleOrder(event) {
+            event.preventDefault();
+            
+            const productId = document.getElementById('product').value;
+            const unit = document.getElementById('unit').value;
+            const quantity = parseInt(document.getElementById('quantity').value) || 0;
+            const product = products[productId];
+            
+            if (!productId || quantity <= 0) {
+                alert("Please select a product and quantity.");
+                return;
+            }
+
+            let flavorText = '';
+            if (product.hasFlavor) {
+                flavorText = ` (Flavor: ${document.getElementById('flavor').value})`;
+            }
+
+            const total = document.getElementById('totalPrice').textContent;
+            
+            alert(`Order Summary:\n\nProduct: ${product.name}${flavorText}\nPackaging: ${unit === 'box' ? 'Box' : 'Pack'}\nQuantity: ${quantity}\nTotal: ${total}\n\nThank you! Your order request has been submitted. We will contact you shortly to confirm.`);
+            
+            // In a real implementation, you would send this data to a backend or email service.
+            // For now, we just show a success message.
+            document.getElementById('orderForm').reset();
+            updateForm();
+            document.getElementById('totalPrice').textContent = '₱0.00';
+        }
+
+        // Initialize hints on load
+        document.addEventListener('DOMContentLoaded', () => {
+            updateForm();
+        });
+    </script>
+</body>
+</html>
