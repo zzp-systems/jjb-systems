@@ -13,13 +13,8 @@
             theme: {
                 extend: {
                     fontFamily: { sans: ['Inter', 'sans-serif'], heading: ['Poppins', 'sans-serif'] },
-                    colors: {
-                        brand: { bg: '#1a052b', bgLight: '#2c0e4a', gold: '#ffb700', goldLight: '#ffcc33', orange: '#ff8c00', purple: '#4b1b7a', purpleLight: '#7b1fa2' }
-                    },
-                    backgroundImage: {
-                        'gold-gradient': 'linear-gradient(145deg, #ffcc33, #ff8c00)',
-                        'purple-gradient': 'linear-gradient(145deg, #7b1fa2, #4b1b7a)',
-                    }
+                    colors: { brand: { bg: '#1a052b', bgLight: '#2c0e4a', gold: '#ffb700', goldLight: '#ffcc33', orange: '#ff8c00', purple: '#4b1b7a', purpleLight: '#7b1fa2' } },
+                    backgroundImage: { 'gold-gradient': 'linear-gradient(145deg, #ffcc33, #ff8c00)', 'purple-gradient': 'linear-gradient(145deg, #7b1fa2, #4b1b7a)' }
                 }
             }
         }
@@ -29,8 +24,9 @@
 <body class="antialiased confetti-bg flex flex-col min-h-screen">
 
     <header class="relative z-40">
-        <div class="top-bar bg-[#0a0212] py-2 px-4 sm:px-6 lg:px-8 flex justify-center sm:justify-start gap-6 text-sm text-gray-300">
+        <div class="top-bar bg-[#0a0212] py-2 px-4 sm:px-6 lg:px-8 flex justify-center sm:justify-start gap-6 text-sm text-gray-300 flex-wrap">
             <span class="flex items-center gap-2">📞 (082) 226-6483</span>
+            <span class="flex items-center gap-2">📱 +63 905-218-2190</span>
             <span class="flex items-center gap-2">✉️ info@jang-jangph.com</span>
         </div>
         <div class="bg-brand-bgLight/90 backdrop-blur-md sticky top-0 h-16 flex items-center justify-center">
@@ -62,8 +58,8 @@
                 <p class="text-xl text-gray-300 leading-relaxed mb-8">
                     A twice-baked Filipino bread delicacy, characterized by a crunchy, sweet, glazed surface and a light, airy crumb. Perfectly toasted for a satisfying crunch.
                 </p>
-                <div class="flex gap-4">
-                    <a href="order.html" class="btn-pill">Order Now</a>
+                <div class="flex flex-wrap gap-4">
+                    <a href="order.html" class="btn-pill">Order Now — ₱125/pack</a>
                     <a href="compliance.html" class="bg-transparent border-2 border-brand-gold text-brand-gold hover:bg-brand-gold hover:text-brand-bg font-heading font-bold py-3 px-8 rounded-full transition-colors uppercase tracking-wide text-center">View CPR</a>
                 </div>
             </div>
@@ -82,6 +78,7 @@
                     <li><strong class="text-white">Packaging:</strong> OPP/CPP (12 pieces per pack; 50 bags per box)</li>
                     <li><strong class="text-white">Shelf Life:</strong> 6 months under ambient storage</li>
                     <li><strong class="text-white">Allergens:</strong> Contains Wheat, Milk</li>
+                    <li><strong class="text-white">Price:</strong> ₱125 / pack · 50 packs per box</li>
                 </ul>
             </div>
             <div class="bg-brand-bgLight/30 p-8 rounded-2xl border border-brand-purple/30">
@@ -109,17 +106,15 @@
     <footer class="bg-[#0a0212] text-gray-400 py-12 px-4 sm:px-6 lg:px-8 text-center border-t-4 border-brand-gold">
         <div class="max-w-4xl mx-auto">
             <h3 class="font-heading text-2xl font-bold text-brand-gold mb-4">Jang-Jang Bakeshop</h3>
-            <p class="text-sm opacity-80 mb-8 max-w-3xl mx-auto leading-relaxed text-gray-300">
-                Bridging heartfelt craftsmanship and certified production. A brand that’s both family-friendly and industry-ready.
-            </p>
-            <div class="flex justify-center gap-6 mb-8 text-brand-gold">
-                <a href="https://www.facebook.com/OfficialJangJangBakeshop/" target="_blank" class="hover:text-white transition-colors">Facebook</a>
-                <a href="mailto:info@jang-jangph.com" class="hover:text-white transition-colors">Email</a>
-                <a href="tel:0822266483" class="hover:text-white transition-colors">Call Us</a>
+            <div class="flex flex-wrap justify-center gap-4 mb-8 text-brand-gold text-sm">
+                <a href="https://www.facebook.com/OfficialJangJangBakeshop/" target="_blank" class="contact-chip">📘 Facebook</a>
+                <a href="mailto:info@jang-jangph.com" class="contact-chip">✉️ info@jang-jangph.com</a>
+                <a href="tel:0822266483" class="contact-chip">☎️ (082) 226-6483</a>
+                <a href="tel:+639052182190" class="contact-chip">📱 +63 905-218-2190</a>
+                <a href="tel:+639271421510" class="contact-chip">📱 +63 927-142-1510</a>
             </div>
             <p class="text-xs opacity-60">&copy; 2026 Jang-Jang Bakeshop. All rights reserved.</p>
         </div>
     </footer>
-
 </body>
 </html>
