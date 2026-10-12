@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Standard Operating Procedures | Jang-Jang Bakeshop</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Poppins:wght@500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'], heading: ['Poppins', 'sans-serif'] },
+                    colors: {
+                        brand: { bg: '#1a052b', bgLight: '#2c0e4a', gold: '#ffb700', goldLight: '#ffcc33', orange: '#ff8c00', purple: '#4b1b7a', purpleLight: '#7b1fa2' }
+                    },
+                    backgroundImage: {
+                        'gold-gradient': 'linear-gradient(145deg, #ffcc33, #ff8c00)',
+                        'purple-gradient': 'linear-gradient(145deg, #7b1fa2, #4b1b7a)',
+                    }
+                }
+            }
+        }
+    </script>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body class="antialiased confetti-bg flex flex-col min-h-screen">
+
+    <header class="relative z-40">
+        <div class="top-bar bg-[#0a0212] py-2 px-4 sm:px-6 lg:px-8 flex justify-center sm:justify-start gap-6 text-sm text-gray-300">
+            <span class="flex items-center gap-2">📞 +63 927 526 9774</span>
+            <span class="flex items-center gap-2">✉️ jjb.angelisun@gmail.com</span>
+        </div>
+        <div class="bg-brand-bgLight/90 backdrop-blur-md sticky top-0 h-16 flex items-center justify-center">
+            <div class="logo-wrapper">
+                <img src="https://raw.githubusercontent.com/zzp-systems/jjb-systems/refs/heads/main/jjb-logo-transaparent.png" alt="Jang-Jang Bakeshop Logo" class="w-full h-full object-contain rounded-full">
+            </div>
+            <nav class="flex gap-2 md:gap-16 lg:gap-24 font-heading font-semibold text-white px-4 w-full max-w-6xl justify-between md:justify-center text-xs md:text-base">
+                <div class="flex gap-2 md:gap-8 z-10">
+                    <a href="index.html" class="hover:text-brand-gold transition-colors">Home</a>
+                    <a href="index.html#about" class="hover:text-brand-gold transition-colors">About Us</a>
+                    <a href="index.html#products-grid" class="hover:text-brand-gold transition-colors">Products</a>
+                </div>
+                <div class="flex gap-2 md:gap-8 z-10">
+                    <a href="compliance.html" class="hover:text-brand-gold transition-colors">Compliance</a>
+                    <a href="sops.html" class="text-brand-gold border-b-2 border-brand-gold pb-1">SOPs</a>
+                    <a href="index.html#contact" class="hover:text-brand-gold transition-colors">Contact</a>
+                </div>
+            </nav>
+        </div>
+        <div class="gold-ribbon"></div>
+    </header>
+
+    <main class="flex-grow py-16 px-4 sm:px-6 lg:px-8 max-w-5xl mx-auto w-full">
+        <div class="text-center mb-16">
+            <h1 class="text-4xl md:text-5xl font-heading font-bold text-brand-gold mb-4">Standard Operating Procedures</h1>
+            <p class="text-xl text-gray-300 max-w-3xl mx-auto">Transparency and consistency are the cornerstones of our operations. Below is a public overview of the SOPs governing our manufacturing, quality, and warehouse processes.</p>
+            <p class="text-sm text-gray-400 mt-4 italic">Note: Full detailed SOP manuals are available for regulatory audit and B2B partner review upon request.</p>
+        </div>
+
+        <div class="space-y-12">
+            <!-- Category 1: Production -->
+            <section class="bg-brand-bgLight/30 rounded-2xl p-8 border border-brand-purple/30">
+                <h2 class="text-2xl font-heading font-bold text-brand-gold mb-6 flex items-center gap-3">
+                    <span class="text-3xl">🍞</span> Production Operations
+                </h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="bg-[#1a052b] p-5 rounded-xl border border-gray-700">
+                        <h4 class="font-bold text-white mb-2">SOP-PRO-001: Production & Batch Record Management</h4>
+                        <p class="text-sm text-gray-400">Standardizes the documentation of every production batch, ensuring traceability from raw materials to finished goods.</p>
+                    </div>
+                    <div class="bg-[#1a052b] p-5 rounded-xl border border-gray-700">
+                        <h4 class="font-bold text-white mb-2">SOP-PRO-002: Biscocho Production & CCP Oversight</h4>
+                        <p class="text-sm text-gray-400">Defines the critical control points (CCPs) for temperature and moisture during the Biscocho baking and toasting processes.</p>
+                    </div>
+                    <div class="bg-[#1a052b] p-5 rounded-xl border border-gray-700">
+                        <h4 class="font-bold text-white mb-2">SOP-PRO-003: Otap Production & CCP Oversight</h4>
+                        <p class="text-sm text-gray-400">Outlines the lamination, baking, and cooling parameters required to achieve the signature flaky texture of Otap while ensuring food safety.</p>
+                    </div>
+                    <div class="bg-[#1a052b] p-5 rounded-xl border border-gray-700">
+                        <h4 class="font-bold text-white mb-2">SOP-PAC-001: Packaging Operations</h4>
+                        <p class="text-sm text-gray-400">Governs the pre-coding, filling, sealing, and boxing procedures to prevent contamination and ensure product integrity.</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Category 2: Quality Assurance -->
+            <section class="bg-brand-bgLight/30 rounded-2xl p-8 border border-brand-purple/30">
+                <h2 class="text-2xl font-heading font-bold text-brand-gold mb-6 flex items-center gap-3">
+                    <span class="text-3xl">🔬</span> Quality Assurance & Food Safety
+                </h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="bg-[#1a052b] p-5 rounded-xl border border-gray-700">
+                        <h4 class="font-bold text-white mb-2">SOP-QC-001: In-Process Quality Control</h4>
+                        <p class="text-sm text-gray-400">Establishes checkpoints during manufacturing (e.g., dough temperature, weight verification) to catch deviations early.</p>
+                    </div>
+                    <div class="bg-[#1a052b] p-5 rounded-xl border border-gray-700">
+                        <h4 class="font-bold text-white mb-2">SOP-QC-002: Finished Product Inspection & Release</h4>
+                        <p class="text-sm text-gray-400">Defines the criteria for organoleptic testing, label verification, and final batch release by the Food Safety Compliance Officer.</p>
+                    </div>
+                    <div class="bg-[#1a052b] p-5 rounded-xl border border-gray-700">
+                        <h4 class="font-bold text-white mb-2">SOP-QC-004: Non-Conforming Product Control</h4>
+                        <p class="text-sm text-gray-400">Procedures for quarantining, evaluating, and disposing of or reworking products that fail quality standards.</p>
+                    </div>
+                    <div class="bg-[#1a052b] p-5 rounded-xl border border-gray-700">
+                        <h4 class="font-bold text-white mb-2">SOP-LAB-001: Product Labeling and Traceability</h4>
+                        <p class="text-sm text-gray-400">Ensures all products carry accurate FDA-compliant labels, including allergen declarations, lot codes, and expiry dates.</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Category 3: Warehouse & Materials -->
+            <section class="bg-brand-bgLight/30 rounded-2xl p-8 border border-brand-purple/30">
+                <h2 class="text-2xl font-heading font-bold text-brand-gold mb-6 flex items-center gap-3">
+                    <span class="text-3xl">📦</span> Warehouse & Materials Management
+                </h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="bg-[#1a052b] p-5 rounded-xl border border-gray-700">
+                        <h4 class="font-bold text-white mb-2">SOP-REC-001: Receiving & Acceptance of Raw Materials</h4>
+                        <p class="text-sm text-gray-400">Details the inspection protocol for incoming deliveries, including temperature checks for perishables and verification of supplier CoAs.</p>
+                    </div>
+                    <div class="bg-[#1a052b] p-5 rounded-xl border border-gray-700">
+                        <h4 class="font-bold text-white mb-2">SOP-WAR-001: Warehouse Inventory & FEFO Rotation</h4>
+                        <p class="text-sm text-gray-400">Enforces the First Expired, First Out (FEFO) system to prevent the use of expired ingredients and ensure proper stock rotation.</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Category 4: Maintenance & Sanitation -->
+            <section class="bg-brand-bgLight/30 rounded-2xl p-8 border border-brand-purple/30">
+                <h2 class="text-2xl font-heading font-bold text-brand-gold mb-6 flex items-center gap-3">
+                    <span class="text-3xl">⚙️</span> Maintenance & Sanitation
+                </h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="bg-[#1a052b] p-5 rounded-xl border border-gray-700">
+                        <h4 class="font-bold text-white mb-2">SOP-MNT-002: Calibration Control</h4>
+                        <p class="text-sm text-gray-400">Schedules and manages the calibration of all measuring devices (scales, thermometers) to ensure accuracy in production.</p>
+                    </div>
+                    <div class="bg-[#1a052b] p-5 rounded-xl border border-gray-700">
+                        <h4 class="font-bold text-white mb-2">SOP-SAN-001: Sanitation & GMP Compliance</h4>
+                        <p class="text-sm text-gray-400">Outlines daily cleaning schedules, pest control monitoring, and personnel hygiene requirements (gowning, handwashing).</p>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <div class="mt-12 text-center">
+            <p class="text-gray-400 mb-6">For a complete copy of our Quality Manual or to schedule a facility audit, please contact our Compliance Team.</p>
+            <a href="index.html#contact" class="btn-pill">Contact Compliance Team</a>
+        </div>
+    </main>
+
+    <footer class="bg-[#0a0212] text-gray-400 py-12 px-4 sm:px-6 lg:px-8 text-center border-t-4 border-brand-gold">
+        <div class="max-w-4xl mx-auto">
+            <h3 class="font-heading text-2xl font-bold text-brand-gold mb-4">Jang-Jang Bakeshop</h3>
+            <p class="text-sm opacity-80 mb-8 max-w-3xl mx-auto leading-relaxed text-gray-300">
+                Bridging heartfelt craftsmanship and certified production. A brand that’s both family-friendly and industry-ready.
+            </p>
+            <p class="text-xs opacity-60">&copy; 2026 Jang-Jang Bakeshop. All rights reserved.</p>
+        </div>
+    </footer>
+
+</body>
+</html>
