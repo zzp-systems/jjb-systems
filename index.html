@@ -6,12 +6,10 @@
     <title>Jang-Jang Bakeshop | Baked with Love, Crafted for Quality</title>
     <meta name="description" content="From our ovens in Davao City to homes across the Philippines, Jang‑Jang Bakeshop bridges heartfelt craftsmanship and certified production.">
     
-    <!-- Typography -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Poppins:wght@500;600;700;800&display=swap" rel="stylesheet">
     
-    <!-- Styling Framework -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -40,150 +38,30 @@
             }
         }
     </script>
-    <style>
-        body { 
-            background-color: #1a052b; 
-            color: #ffffff; 
-            overflow-x: hidden;
-        }
-        
-        /* ── ENHANCED CONFETTI BACKGROUND ── */
-        .confetti-bg {
-            background-color: #1a052b;
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200' viewBox='0 0 200 200'%3E%3Cpath d='M20 20h8v8h-8z' fill='%23ffb700' opacity='0.3'/%3E%3Ccircle cx='150' cy='40' r='4' fill='%23ffffff' opacity='0.2'/%3E%3Cpath d='M100 80l5 10h-10z' fill='%23ffcc33' opacity='0.4'/%3E%3Cpath d='M180 150h6v6h-6z' fill='%237b1fa2' opacity='0.5'/%3E%3Ccircle cx='40' cy='160' r='3' fill='%2300ffff' opacity='0.3'/%3E%3Cpath d='M70 110l3 6h-6z' fill='%23ff8c00' opacity='0.3'/%3E%3Ccircle cx='130' cy='180' r='5' fill='%23ffb700' opacity='0.2'/%3E%3Cpath d='M10 90h4v4h-4z' fill='%23ffffff' opacity='0.3'/%3E%3Ccircle cx='180' cy='20' r='3' fill='%23ffcc33' opacity='0.4'/%3E%3Cpath d='M110 20h6v6h-6z' fill='%23ff8c00' opacity='0.3'/%3E%3Cpath d='M50 50l4 8h-8z' fill='%23ffffff' opacity='0.2'/%3E%3Ccircle cx='90' cy='140' r='4' fill='%237b1fa2' opacity='0.5'/%3E%3Cpath d='M160 100h5v5h-5z' fill='%2300ffff' opacity='0.2'/%3E%3C/svg%3E");
-            background-size: 200px 200px;
-            animation: confetti-drift 30s linear infinite;
-        }
-
-        @keyframes confetti-drift {
-            0% { background-position: 0 0; }
-            100% { background-position: 200px 200px; }
-        }
-
-        .top-bar {
-            border-bottom: 1px solid rgba(255, 215, 0, 0.2);
-        }
-
-        /* ── LOGO WRAPPER (UPDATED FOR MOBILE) ── */
-        .logo-wrapper {
-            position: absolute;
-            top: 10px;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 50;
-            background: #ffffff;
-            border: 4px solid #ffb700;
-            border-radius: 50%;
-            padding: 10px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
-            width: 140px;
-            height: 140px;
-            display: flex; /* Changed from 'hidden md:flex' to 'flex' */
-            align-items: center;
-            justify-content: center;
-            overflow: hidden;
-        }
-
-        /* Adjust logo size for mobile */
-        @media (max-width: 767px) {
-            .logo-wrapper {
-                width: 100px;
-                height: 100px;
-                top: 5px;
-            }
-        }
-
-        .gold-ribbon {
-            background: linear-gradient(90deg, #b8860b, #ffd700, #ffb700, #ffd700, #b8860b);
-            height: 12px;
-            width: 100%;
-            box-shadow: 0 4px 15px rgba(255, 183, 0, 0.4);
-        }
-
-        .mockup-card {
-            border-radius: 24px;
-            padding: 30px 20px;
-            text-align: center;
-            box-shadow: 0 15px 35px rgba(0,0,0,0.3);
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-            position: relative;
-            overflow: hidden;
-            border: 1px solid rgba(255,255,255,0.1);
-        }
-        .mockup-card:hover {
-            transform: translateY(-8px);
-            box-shadow: 0 20px 40px rgba(0,0,0,0.5);
-        }
-        .mockup-card::before {
-            content: '';
-            position: absolute;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background: linear-gradient(180deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0) 100%);
-            pointer-events: none;
-        }
-
-        .gold-plate-wrapper {
-            position: relative;
-            padding-bottom: 20px;
-        }
-        .gold-plate {
-            position: absolute;
-            bottom: 0;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 80%;
-            height: 20px;
-            background: radial-gradient(ellipse at center, #ffd700 0%, #b8860b 70%, transparent 100%);
-            border-radius: 50%;
-            opacity: 0.6;
-            z-index: -1;
-            filter: blur(2px);
-        }
-
-        .btn-pill {
-            background: linear-gradient(90deg, #ffcc33, #ff8c00);
-            color: #1a052b;
-            font-family: 'Poppins', sans-serif;
-            font-weight: 700;
-            padding: 12px 36px;
-            border-radius: 50px;
-            box-shadow: 0 6px 20px rgba(255, 136, 0, 0.4);
-            transition: all 0.2s ease;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-        .btn-pill:hover {
-            transform: scale(1.05);
-            box-shadow: 0 8px 25px rgba(255, 136, 0, 0.6);
-        }
-    </style>
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body class="antialiased confetti-bg flex flex-col min-h-screen">
 
     <!-- Header & Navigation -->
     <header class="relative z-40">
-        <!-- Top Bar -->
         <div class="top-bar bg-[#0a0212] py-2 px-4 sm:px-6 lg:px-8 flex justify-center sm:justify-start gap-6 text-sm text-gray-300">
-            <span class="flex items-center gap-2">📞 Number</span>
-            <span class="flex items-center gap-2">✉️ info@jangjangbakeshop.com</span>
+            <span class="flex items-center gap-2">📞 +63 927 526 9774</span>
+            <span class="flex items-center gap-2">✉️ jjb.angelisun@gmail.com</span>
         </div>
-        
-        <!-- Main Nav -->
         <div class="bg-brand-bgLight/90 backdrop-blur-md sticky top-0 h-16 flex items-center justify-center">
-            <!-- Center Logo (now visible on all devices) -->
             <div class="logo-wrapper">
                 <img src="https://raw.githubusercontent.com/zzp-systems/jjb-systems/refs/heads/main/jjb-logo-transaparent.png" alt="Jang-Jang Bakeshop Logo" class="w-full h-full object-contain rounded-full">
             </div>
-            
-            <!-- Mobile-friendly navigation with adjusted gaps and smaller text -->
-            <nav class="flex gap-2 md:gap-32 lg:gap-48 font-heading font-semibold text-white px-4 w-full max-w-5xl justify-between md:justify-center text-xs md:text-base">
+            <nav class="flex gap-2 md:gap-16 lg:gap-24 font-heading font-semibold text-white px-4 w-full max-w-6xl justify-between md:justify-center text-xs md:text-base">
                 <div class="flex gap-2 md:gap-8 z-10">
-                    <a href="#home" class="hover:text-brand-gold transition-colors">Home</a>
+                    <a href="index.html" class="hover:text-brand-gold transition-colors">Home</a>
                     <a href="#about" class="hover:text-brand-gold transition-colors">About Us</a>
+                    <a href="#products-grid" class="hover:text-brand-gold transition-colors">Products</a>
                 </div>
                 <div class="flex gap-2 md:gap-8 z-10">
-                    <a href="#menu" class="hover:text-brand-gold transition-colors">Menu</a>
-                    <a href="#contact" class="hover:text-brand-gold transition-colors">Contact Us</a>
+                    <a href="compliance.html" class="hover:text-brand-gold transition-colors">Compliance</a>
+                    <a href="sops.html" class="hover:text-brand-gold transition-colors">SOPs</a>
+                    <a href="#contact" class="hover:text-brand-gold transition-colors">Contact</a>
                 </div>
             </nav>
         </div>
@@ -204,7 +82,7 @@
                 </p>
                 <div class="flex flex-col sm:flex-row justify-center gap-6">
                     <a href="#contact" class="btn-pill">Order Now</a>
-                    <a href="#menu" class="bg-transparent border-2 border-brand-gold text-brand-gold hover:bg-brand-gold hover:text-brand-bg font-heading font-bold py-3 px-8 rounded-full transition-colors uppercase tracking-wide">Explore Our Menu</a>
+                    <a href="#products-grid" class="bg-transparent border-2 border-brand-gold text-brand-gold hover:bg-brand-gold hover:text-brand-bg font-heading font-bold py-3 px-8 rounded-full transition-colors uppercase tracking-wide">Explore Our Menu</a>
                 </div>
             </div>
         </section>
@@ -222,7 +100,7 @@
                     </p>
                 </div>
 
-                <div id="menu" class="mockup-card bg-purple-gradient text-white transform md:-translate-y-4">
+                <div class="mockup-card bg-purple-gradient text-white transform md:-translate-y-4">
                     <div class="text-5xl mb-4">🧁</div>
                     <h3 class="text-2xl font-heading font-bold mb-3 text-brand-gold">Our Menu</h3>
                     <h4 class="font-bold text-sm uppercase tracking-wider mb-2 text-gray-300">Our Signature Creations</h4>
@@ -232,7 +110,7 @@
                     <a href="#products-grid" class="inline-block mt-6 btn-pill text-xs py-2 px-6">View Full Menu</a>
                 </div>
 
-                <div id="qa" class="mockup-card bg-gold-gradient text-brand-bg">
+                <div class="mockup-card bg-gold-gradient text-brand-bg">
                     <div class="text-5xl mb-4">🏅</div>
                     <h3 class="text-2xl font-heading font-bold mb-3">Quality Assurance</h3>
                     <h4 class="font-bold text-sm uppercase tracking-wider mb-2 opacity-80">Certified for Safety, Trusted for Taste</h4>
@@ -253,66 +131,66 @@
             <div class="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                 
                 <!-- Item 1: Biscocho -->
-                <div class="bg-brand-bgLight/50 p-6 rounded-2xl border border-brand-purple/50 gold-plate-wrapper flex flex-col justify-between">
+                <a href="biscocho.html" class="bg-brand-bgLight/50 p-6 rounded-2xl border border-brand-purple/50 gold-plate-wrapper flex flex-col justify-between hover:border-brand-gold transition-colors group">
                     <div>
-                        <div class="text-4xl mb-4">🍞</div>
+                        <div class="text-4xl mb-4 group-hover:scale-110 transition-transform">🍞</div>
                         <h3 class="text-xl font-heading font-bold text-brand-gold mb-2">Biscocho</h3>
                         <p class="text-gray-300 text-sm">Crispy, golden, and proudly FDA‑licensed — our flagship toasted bread delicacy.</p>
                     </div>
                     <div class="gold-plate"></div>
-                </div>
+                </a>
 
                 <!-- Item 2: Otap -->
-                <div class="bg-brand-bgLight/50 p-6 rounded-2xl border border-brand-purple/50 gold-plate-wrapper flex flex-col justify-between">
+                <a href="otap.html" class="bg-brand-bgLight/50 p-6 rounded-2xl border border-brand-purple/50 gold-plate-wrapper flex flex-col justify-between hover:border-brand-gold transition-colors group">
                     <div>
-                        <div class="text-4xl mb-4">🥐</div>
+                        <div class="text-4xl mb-4 group-hover:scale-110 transition-transform">🥐</div>
                         <h3 class="text-xl font-heading font-bold text-brand-gold mb-2">Otap</h3>
                         <p class="text-gray-300 text-sm">Flaky, sweet, and proudly FDA‑licensed — our signature layered puff pastry.</p>
                     </div>
                     <div class="gold-plate"></div>
-                </div>
+                </a>
 
                 <!-- Item 3: Flavored Banana Chips -->
-                <div class="bg-brand-bgLight/50 p-6 rounded-2xl border border-brand-purple/50 gold-plate-wrapper flex flex-col justify-between">
+                <a href="banana-chips.html" class="bg-brand-bgLight/50 p-6 rounded-2xl border border-brand-purple/50 gold-plate-wrapper flex flex-col justify-between hover:border-brand-gold transition-colors group">
                     <div>
-                        <div class="text-4xl mb-4">🍌</div>
+                        <div class="text-4xl mb-4 group-hover:scale-110 transition-transform">🍌</div>
                         <h3 class="text-xl font-heading font-bold text-brand-gold mb-2">Flavored Banana Chips</h3>
                         <p class="text-gray-300 text-sm mb-3">Available in-store! A sweet‑savory twist on a Filipino favorite, made with precision and care.</p>
                         <span class="inline-block bg-brand-purple/30 text-brand-gold text-xs font-semibold px-2 py-1 rounded">Pending FDA Commercial Approval</span>
                     </div>
                     <div class="gold-plate"></div>
-                </div>
+                </a>
 
                 <!-- Item 4: Peanut Brittle -->
-                <div class="bg-brand-bgLight/50 p-6 rounded-2xl border border-brand-purple/50 gold-plate-wrapper flex flex-col justify-between">
+                <a href="peanut-brittle.html" class="bg-brand-bgLight/50 p-6 rounded-2xl border border-brand-purple/50 gold-plate-wrapper flex flex-col justify-between hover:border-brand-gold transition-colors group">
                     <div>
-                        <div class="text-4xl mb-4">🥜</div>
+                        <div class="text-4xl mb-4 group-hover:scale-110 transition-transform">🥜</div>
                         <h3 class="text-xl font-heading font-bold text-brand-gold mb-2">Peanut Brittle</h3>
                         <p class="text-gray-300 text-sm mb-3">Available in-store! Crunchy, caramelized perfection made with care.</p>
                         <span class="inline-block bg-brand-purple/30 text-brand-gold text-xs font-semibold px-2 py-1 rounded">Pending FDA Commercial Approval</span>
                     </div>
                     <div class="gold-plate"></div>
-                </div>
+                </a>
 
                 <!-- Item 5: Breads -->
-                <div class="bg-brand-bgLight/50 p-6 rounded-2xl border border-brand-purple/50 gold-plate-wrapper flex flex-col justify-between">
+                <a href="breads.html" class="bg-brand-bgLight/50 p-6 rounded-2xl border border-brand-purple/50 gold-plate-wrapper flex flex-col justify-between hover:border-brand-gold transition-colors group">
                     <div>
-                        <div class="text-4xl mb-4">🥖</div>
+                        <div class="text-4xl mb-4 group-hover:scale-110 transition-transform">🥖</div>
                         <h3 class="text-xl font-heading font-bold text-brand-gold mb-2">Breads</h3>
                         <p class="text-gray-300 text-sm">From soft pandesal to hearty loaf breads, we bake daily to bring comfort to every table.</p>
                     </div>
                     <div class="gold-plate"></div>
-                </div>
+                </a>
 
                 <!-- Item 6: Pastries -->
-                <div class="bg-brand-bgLight/50 p-6 rounded-2xl border border-brand-purple/50 gold-plate-wrapper flex flex-col justify-between">
+                <a href="pastries.html" class="bg-brand-bgLight/50 p-6 rounded-2xl border border-brand-purple/50 gold-plate-wrapper flex flex-col justify-between hover:border-brand-gold transition-colors group">
                     <div>
-                        <div class="text-4xl mb-4">🧁</div>
+                        <div class="text-4xl mb-4 group-hover:scale-110 transition-transform">🧁</div>
                         <h3 class="text-xl font-heading font-bold text-brand-gold mb-2">Pastries</h3>
                         <p class="text-gray-300 text-sm">Decadent cakes, sweet rolls, and flaky treats baked fresh to bring joy to your day.</p>
                     </div>
                     <div class="gold-plate"></div>
-                </div>
+                </a>
 
             </div>
             
@@ -331,17 +209,17 @@
                     <div class="bg-[#1a052b] p-6 rounded-xl flex flex-col items-center border border-brand-gold/10">
                         <span class="text-3xl mb-3">📍</span>
                         <h4 class="font-bold text-brand-gold mb-1">Address</h4>
-                        <p class="text-sm text-gray-300">[To be confirmed]</p>
+                        <p class="text-sm text-gray-300">Purok 8, San Miguel, Brgy. Indangan, Buhangin District, Davao City</p>
                     </div>
                     <div class="bg-[#1a052b] p-6 rounded-xl flex flex-col items-center border border-brand-gold/10">
                         <span class="text-3xl mb-3">📞</span>
                         <h4 class="font-bold text-brand-gold mb-1">Phone</h4>
-                        <p class="text-sm text-gray-300">Number</p>
+                        <p class="text-sm text-gray-300">+63 927 526 9774</p>
                     </div>
                     <div class="bg-[#1a052b] p-6 rounded-xl flex flex-col items-center border border-brand-gold/10">
                         <span class="text-3xl mb-3">✉️</span>
                         <h4 class="font-bold text-brand-gold mb-1">Email</h4>
-                        <p class="text-sm text-gray-300">info@jangjangbakeshop.com</p>
+                        <p class="text-sm text-gray-300">jjb.angelisun@gmail.com</p>
                     </div>
                 </div>
 
@@ -353,7 +231,7 @@
         </section>
     </main>
 
-    <!-- Footer with Brand Narrative -->
+    <!-- Footer -->
     <footer class="bg-[#0a0212] text-gray-400 py-12 px-4 sm:px-6 lg:px-8 text-center border-t-4 border-brand-gold">
         <div class="max-w-4xl mx-auto">
             <h3 class="font-heading text-2xl font-bold text-brand-gold mb-4">Jang-Jang Bakeshop</h3>
