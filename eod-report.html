@@ -1,0 +1,809 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Marketer Field Portal & EOD Dashboard | Jang-Jang Bakeshop</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'], heading: ['Poppins', 'sans-serif'] },
+                    colors: {
+                        brand: {
+                            bg: '#1a052b',
+                            bgLight: '#2c0e4a',
+                            gold: '#ffb700',
+                            goldLight: '#ffcc33',
+                            orange: '#ff8c00',
+                            purple: '#4b1b7a',
+                            purpleLight: '#7b1fa2',
+                            dark: '#0a0212'
+                        }
+                    },
+                    backgroundImage: {
+                        'gold-gradient': 'linear-gradient(145deg, #ffcc33, #ff8c00)',
+                        'purple-gradient': 'linear-gradient(145deg, #7b1fa2, #4b1b7a)'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .custom-card {
+            background: rgba(44, 14, 74, 0.85);
+            border: 1px solid #4b1b7a;
+            border-radius: 20px;
+            backdrop-filter: blur(12px);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
+        }
+        .form-label {
+            display: block;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #ffcc33;
+            margin-bottom: 0.4rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        .form-input {
+            width: 100%;
+            background: #1a052b;
+            border: 1.5px solid #4b1b7a;
+            border-radius: 10px;
+            padding: 0.75rem 1rem;
+            color: #ffffff;
+            outline: none;
+            transition: all 0.2s ease;
+            font-size: 0.95rem;
+        }
+        .form-input:focus {
+            border-color: #ffb700;
+            box-shadow: 0 0 0 3px rgba(255, 183, 0, 0.2);
+        }
+        .btn-gold {
+            background: linear-gradient(145deg, #ffcc33, #ff8c00);
+            color: #1a052b;
+            font-weight: 700;
+            border-radius: 9999px;
+            padding: 0.75rem 2rem;
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+            box-shadow: 0 4px 15px rgba(255, 183, 0, 0.3);
+        }
+        .btn-gold:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(255, 183, 0, 0.5);
+        }
+        .btn-gold:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .tab-btn.active {
+            background: #ffb700;
+            color: #1a052b;
+            font-weight: 700;
+        }
+        .toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #2c0e4a;
+            border: 2px solid #ffb700;
+            color: #ffcc33;
+            padding: 12px 20px;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            z-index: 9999;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            transform: translateY(-120%);
+            transition: transform 0.3s ease;
+            max-width: 320px;
+        }
+        .toast.show { transform: translateY(0); }
+        .toast.success { border-color: #10b981; color: #6ee7b7; }
+        .toast.error { border-color: #ef4444; color: #fca5a5; }
+        .offline-banner {
+            display: none;
+            background: #C0392B;
+            color: white;
+            text-align: center;
+            padding: 8px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+        .offline-banner.show { display: block; }
+        .upload-progress {
+            display: none;
+            margin-top: 16px;
+            background: #1a052b;
+            border: 1.5px solid #4b1b7a;
+            border-radius: 10px;
+            padding: 16px;
+        }
+        .upload-progress.show { display: block; }
+        .progress-bar-bg {
+            width: 100%;
+            height: 8px;
+            background: #2c0e4a;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 8px;
+        }
+        .progress-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #ffcc33, #ff8c00);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+    </style>
+</head>
+<body class="bg-brand-bg text-gray-200 antialiased flex flex-col min-h-screen">
+
+    <!-- Offline Banner -->
+    <div id="offlineBanner" class="offline-banner">
+        ⚠️ You are offline. Your draft is being saved locally and will sync when you reconnect.
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="toast"></div>
+
+    <!-- Top Status Bar -->
+    <header class="relative z-40 border-b border-brand-purple">
+        <div class="bg-brand-dark py-2 px-4 sm:px-8 flex justify-between items-center text-xs text-gray-400">
+            <span class="font-medium text-brand-goldLight">Jang-Jang Bakeshop — Field Marketer Portal & Operations Engine</span>
+            <span>📍 Davao City, Philippines</span>
+        </div>
+        <div class="bg-brand-bgLight/90 backdrop-blur-md px-6 py-4 flex flex-wrap items-center justify-between gap-4">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-full border border-brand-gold overflow-hidden bg-brand-bg flex items-center justify-center">
+                    <img src="https://raw.githubusercontent.com/zzp-systems/jjb-systems/refs/heads/main/jjb-logo-transaparent.png" alt="JJB" class="w-8 h-8 object-contain">
+                </div>
+                <div>
+                    <h1 class="font-heading font-bold text-lg text-white">Daily EOD & Progress Reporting</h1>
+                    <p class="text-xs text-brand-gold">Philippine Sales & Distribution Network</p>
+                </div>
+            </div>
+            
+            <div class="flex bg-brand-bg p-1 rounded-full border border-brand-purple">
+                <button onclick="switchView('form')" id="tabForm" class="tab-btn active px-5 py-2 rounded-full text-xs transition-colors">
+                    📝 Submit Report
+                </button>
+                <button onclick="switchView('dashboard')" id="tabDash" class="tab-btn text-gray-300 px-5 py-2 rounded-full text-xs transition-colors">
+                    📊 Operations Dashboard
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-grow py-10 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full">
+        
+        <!-- VIEW 1: MARKETER SUBMISSION FORM -->
+        <section id="submissionFormView">
+            <div class="max-w-4xl mx-auto custom-card p-6 sm:p-10">
+                <div class="border-b border-brand-purple pb-6 mb-8 text-center sm:text-left flex flex-col sm:flex-row justify-between sm:items-end gap-4">
+                    <div>
+                        <span class="text-xs uppercase tracking-wider text-brand-gold font-bold">Field Compliance Form</span>
+                        <h2 class="text-3xl font-heading font-bold text-white mt-1">End-of-Day (EOD) Settlement</h2>
+                        <p class="text-sm text-gray-300 mt-1">Submit collections, cash count, receipts, and territory expansion data.</p>
+                    </div>
+                    <div class="text-xs bg-brand-bg px-4 py-2 rounded-xl border border-brand-purple text-gray-300">
+                        Date: <strong id="currentDateDisplay" class="text-brand-goldLight"></strong>
+                    </div>
+                </div>
+
+                <form id="eodForm" onsubmit="handleEODSubmit(event)" class="space-y-8">
+                    <!-- SECTION 1: Marketer & Territory -->
+                    <div>
+                        <h3 class="text-base font-heading font-semibold text-brand-gold mb-4 flex items-center gap-2">
+                            <span>1.</span> Marketer Profile & Territory Assignment
+                        </h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                            <div>
+                                <label class="form-label" for="territorySelect">Territory / Region *</label>
+                                <select id="territorySelect" class="form-input" onchange="populateMarketers(); saveDraft();" required>
+                                    <option value="" disabled selected>-- Select Territory --</option>
+                                    <option value="West Visayas">West Visayas</option>
+                                    <option value="East Visayas">East Visayas</option>
+                                    <option value="Southmin">Southmin</option>
+                                    <option value="Northmin">Northmin</option>
+                                    <option value="Westmin">Westmin</option>
+                                    <option value="Eastmin/North Davao">Eastmin / North Davao</option>
+                                    <option value="Davao">Davao</option>
+                                    <option value="Cebu">Cebu</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="form-label" for="marketerSelect">Assigned Marketer Name *</label>
+                                <select id="marketerSelect" class="form-input" onchange="updateCoveredAreaHint(); saveDraft();" required>
+                                    <option value="" disabled selected>-- Select Territory First --</option>
+                                </select>
+                            </div>
+                            <div class="md:col-span-2">
+                                <label class="form-label">Covered Areas (Auto-Identified)</label>
+                                <input type="text" id="coveredAreaInput" class="form-input text-gray-400 bg-brand-bg/50" readonly placeholder="Assigned jurisdiction will appear here">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- SECTION 2: Financial -->
+                    <div class="border-t border-brand-purple/60 pt-6">
+                        <h3 class="text-base font-heading font-semibold text-brand-gold mb-4 flex items-center gap-2">
+                            <span>2.</span> Financial Collections & Ending Cash Settlement
+                        </h3>
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-5">
+                            <div>
+                                <label class="form-label" for="totalSalesInvoiced">Total Sales Invoiced (₱) *</label>
+                                <input type="number" step="0.01" id="totalSalesInvoiced" class="form-input" placeholder="0.00" oninput="calculateFinancialReconciliation(); saveDraft();" required>
+                            </div>
+                            <div>
+                                <label class="form-label" for="totalRemitted">Remitted / Deposited (₱) *</label>
+                                <input type="number" step="0.01" id="totalRemitted" class="form-input" placeholder="0.00" oninput="calculateFinancialReconciliation(); saveDraft();" required>
+                            </div>
+                            <div>
+                                <label class="form-label" for="endingCashOnHand">Ending Cash on Hand (₱) *</label>
+                                <input type="number" step="0.01" id="endingCashOnHand" class="form-input" placeholder="0.00" oninput="calculateFinancialReconciliation(); saveDraft();" required>
+                            </div>
+                        </div>
+
+                        <div id="financialVarianceBox" class="mt-4 p-4 rounded-xl border border-brand-purple bg-brand-bg/90 flex flex-col sm:flex-row justify-between items-center text-sm gap-2">
+                            <div>
+                                <span class="text-gray-400">Total Accounted For:</span>
+                                <span id="totalAccountedDisplay" class="font-bold text-white ml-2">₱0.00</span>
+                            </div>
+                            <div>
+                                <span class="text-gray-400">Ledger Discrepancy / Variance:</span>
+                                <span id="varianceDisplay" class="font-bold text-brand-gold ml-2">₱0.00</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- SECTION 3: Replenishment -->
+                    <div class="border-t border-brand-purple/60 pt-6">
+                        <h3 class="text-base font-heading font-semibold text-brand-gold mb-4 flex items-center gap-2">
+                            <span>3.</span> Operations & Cash Replenishment Request
+                        </h3>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                            <div>
+                                <label class="form-label" for="replenishmentAmount">Replenishment Amount Needed (₱)</label>
+                                <input type="number" step="0.01" id="replenishmentAmount" class="form-input" placeholder="0.00 (Leave 0 if none)" oninput="saveDraft();">
+                            </div>
+                            <div>
+                                <label class="form-label" for="replenishmentPurpose">Replenishment Justification / Purpose</label>
+                                <input type="text" id="replenishmentPurpose" class="form-input" placeholder="e.g., Gas allowance, toll, emergency van repair" oninput="saveDraft();">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- SECTION 4: New Stores -->
+                    <div class="border-t border-brand-purple/60 pt-6">
+                        <h3 class="text-base font-heading font-semibold text-brand-gold mb-4 flex items-center gap-2">
+                            <span>4.</span> Territory Expansion & New Stores Added
+                        </h3>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                            <div>
+                                <label class="form-label" for="newStoresCount">Number of New Outlets/Vendors Closed</label>
+                                <input type="number" id="newStoresCount" min="0" value="0" class="form-input" oninput="saveDraft();">
+                            </div>
+                            <div>
+                                <label class="form-label" for="newStoreMaps">Google Maps Pin Links (Comma Separated)</label>
+                                <input type="text" id="newStoreMaps" class="form-input" placeholder="https://maps.app.goo.gl/..., https://goo.gl/maps/..." oninput="saveDraft();">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- SECTION 5: Attachments -->
+                    <div class="border-t border-brand-purple/60 pt-6">
+                        <h3 class="text-base font-heading font-semibold text-brand-gold mb-4 flex items-center gap-2">
+                            <span>5.</span> Documentary Attachments (Images / Receipts)
+                        </h3>
+                        <p class="text-xs text-gray-300 mb-4">Upload clean, readable photos of Deposit Slips, Sales Invoices, or Collection Receipts.</p>
+                        
+                        <div class="border-2 border-dashed border-brand-purple rounded-xl p-6 text-center bg-brand-bg/40 hover:border-brand-gold transition-colors">
+                            <input type="file" id="attachmentInput" multiple accept="image/*,.pdf" class="hidden" onchange="handleAttachmentSelect(event)">
+                            <button type="button" onclick="document.getElementById('attachmentInput').click()" class="text-xs bg-brand-purple text-brand-gold font-semibold px-4 py-2.5 rounded-lg border border-brand-gold hover:bg-brand-purpleLight transition-all">
+                                📎 Choose Files to Attach
+                            </button>
+                            <p class="text-xs text-gray-400 mt-2">Max 5MB per file. Formats: JPG, PNG, PDF.</p>
+                            <div id="attachmentPreviews" class="flex flex-wrap gap-3 mt-4 justify-center"></div>
+                        </div>
+                    </div>
+
+                    <!-- Submit -->
+                    <div class="pt-6 text-center">
+                        <button type="submit" id="submitBtn" class="btn-gold w-full sm:w-auto text-base">
+                            🚀 Transmit EOD Settlement Report
+                        </button>
+                        <div id="uploadProgress" class="upload-progress">
+                            <p class="text-sm text-brand-gold font-semibold" id="uploadStatus">Preparing transmission...</p>
+                            <div class="progress-bar-bg">
+                                <div class="progress-bar-fill" id="progressFill"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Draft Controls -->
+                    <div class="pt-2 text-center text-xs text-gray-400">
+                        <span id="draftStatus">Auto-save enabled</span> · 
+                        <button type="button" onclick="clearDraft()" class="text-brand-gold underline hover:text-white transition-colors">Clear Draft</button>
+                    </div>
+                </form>
+            </div>
+        </section>
+
+        <!-- VIEW 2: DASHBOARD -->
+        <section id="dashboardView" class="hidden space-y-8">
+            <div class="custom-card p-6 flex flex-wrap items-center justify-between gap-4">
+                <div>
+                    <h2 class="text-xl font-heading font-bold text-white">Field Performance & Submission Tracker</h2>
+                    <p class="text-xs text-brand-gold">Real-time audit across Visayas & Mindanao Marketer Roster</p>
+                </div>
+                <div class="flex items-center gap-3">
+                    <label class="text-xs text-gray-300 font-semibold uppercase">Cadence View:</label>
+                    <select id="cadenceFilter" class="form-input text-xs w-36" onchange="renderDashboard()">
+                        <option value="daily">Daily View</option>
+                        <option value="weekly">Weekly Rollup</option>
+                        <option value="monthly">Monthly Audit</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+                <div class="custom-card p-5 border-l-4 border-l-brand-gold">
+                    <span class="text-xs text-gray-400 uppercase font-semibold">Reports Transmitted</span>
+                    <h4 id="metricTotalReports" class="text-2xl font-bold font-heading text-brand-gold mt-1">0</h4>
+                    <span class="text-[11px] text-gray-400">Total Submissions Logged</span>
+                </div>
+                <div class="custom-card p-5 border-l-4 border-l-emerald-400">
+                    <span class="text-xs text-gray-400 uppercase font-semibold">Gross Sales Invoiced</span>
+                    <h4 id="metricGrossSales" class="text-2xl font-bold font-heading text-emerald-400 mt-1">₱0.00</h4>
+                    <span class="text-[11px] text-gray-400">Invoiced Value</span>
+                </div>
+                <div class="custom-card p-5 border-l-4 border-l-sky-400">
+                    <span class="text-xs text-gray-400 uppercase font-semibold">Total Bank Remittances</span>
+                    <h4 id="metricTotalRemitted" class="text-2xl font-bold font-heading text-sky-400 mt-1">₱0.00</h4>
+                    <span class="text-[11px] text-gray-400">Deposited to Accounts</span>
+                </div>
+                <div class="custom-card p-5 border-l-4 border-l-orange-400">
+                    <span class="text-xs text-gray-400 uppercase font-semibold">Replenishments Requested</span>
+                    <h4 id="metricReplenishments" class="text-2xl font-bold font-heading text-brand-orange mt-1">₱0.00</h4>
+                    <span class="text-[11px] text-gray-400">Field Expenses & Petty Cash</span>
+                </div>
+            </div>
+
+            <div class="custom-card p-6 overflow-hidden">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="font-heading font-semibold text-lg text-white">Marketer Submission Roster</h3>
+                    <span class="text-xs text-brand-goldLight">8 Territories / 14 Field Personnel</span>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse text-sm">
+                        <thead>
+                            <tr class="bg-brand-purple/60 text-brand-gold uppercase text-[11px] tracking-wider border-b border-brand-purple">
+                                <th class="p-3">Territory</th>
+                                <th class="p-3">Marketer(s)</th>
+                                <th class="p-3 text-center">Submission Status</th>
+                                <th class="p-3 text-right">Invoiced</th>
+                                <th class="p-3 text-right">Remitted</th>
+                                <th class="p-3 text-right">Ending Cash</th>
+                                <th class="p-3 text-center">New Stores</th>
+                                <th class="p-3 text-center">Attachments</th>
+                            </tr>
+                        </thead>
+                        <tbody id="rosterTableBody" class="divide-y divide-brand-purple/30 text-gray-300">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="bg-brand-dark text-gray-400 py-6 px-4 text-center border-t-2 border-brand-gold mt-auto text-xs">
+        <p>&copy; 2026 Jang-Jang Bakeshop Systems. All distribution and financial records strictly confidential.</p>
+    </footer>
+
+    <script>
+        // ═══════════════════════════════════════════════════════════════
+        // ⚙️ CONFIGURATION — Replace with your Google Apps Script URL
+        // ═══════════════════════════════════════════════════════════════
+        const APPS_SCRIPT_URL = "https://script.google.com/macros/s/YOUR_DEPLOYMENT_ID_HERE/exec";
+        const DRAFT_KEY = "jjb_eod_draft_v1";
+
+        // ═══════════════════════════════════════════════════════════════
+        // TERRITORY NETWORK DATASET
+        // ═══════════════════════════════════════════════════════════════
+        const territoryNetwork = {
+            "West Visayas": { marketers: ["Melchor Fernando"], areas: "ILO-ILO, BACOLOD, NEGROS OCC, AKLAN, ANTIQUE, DUMAGUETE" },
+            "East Visayas": { marketers: ["Charity Castro", "Rey Pahimnayan"], areas: "BOHOL, TACLOBAN, SAMAR, LEYTE, BILIRAN" },
+            "Southmin": { marketers: ["Noralyn Alyucod", "Elizabeth Lagrimas"], areas: "GENSAN, COTABATO AREA, SULTAN KUDARAT, ISULAN" },
+            "Northmin": { marketers: ["Janish Lastimosa", "Choleen Israel", "Jocelyn Puguon"], areas: "CAGAYAN, BUKIDNON, LANAO AREA, MISAMIS AREA, CAMIGUIN" },
+            "Westmin": { marketers: ["Jeana Sonsona", "Lovely Mae Montero"], areas: "PAGADIAN CITY, ZAMBOANGA, ILIGAN, OZAMIS, OROQUIETA, TANGUB, DIPOLOG" },
+            "Eastmin/North Davao": { marketers: ["Maria Villacencio", "Rhea Joy Lendong"], areas: "PANABO, TIBUNGCO, SAMAL, SURIGAO AREA, TAGUM, CARMEN, AGUSAN AREA, NABUNTURAN, MARAGUSAN, BUTUAN, BISLIG" },
+            "Davao": { marketers: ["Shyne Torzar", "Genesis Lizare"], areas: "DAVAO CITY, DAVAO DEL SUR" },
+            "Cebu": { marketers: ["Shella Cultura", "Julie Gerasta"], areas: "LILOAN, DAAN BANTAYAN, CEBU AREA" }
+        };
+
+        // ═══════════════════════════════════════════════════════════════
+        // STATE
+        // ═══════════════════════════════════════════════════════════════
+        let submittedReports = [];
+        let attachedFiles = []; // Stores {name, type, base64} objects
+
+        // ═══════════════════════════════════════════════════════════════
+        // TOAST NOTIFICATIONS
+        // ═══════════════════════════════════════════════════════════════
+        function showToast(message, type = 'info', duration = 3000) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.className = 'toast show ' + type;
+            setTimeout(() => { toast.className = 'toast ' + type; }, duration);
+        }
+
+        // ═══════════════════════════════════════════════════════════════
+        // OFFLINE DETECTION
+        // ═══════════════════════════════════════════════════════════════
+        function updateOnlineStatus() {
+            const banner = document.getElementById('offlineBanner');
+            if (navigator.onLine) {
+                banner.classList.remove('show');
+            } else {
+                banner.classList.add('show');
+            }
+        }
+        window.addEventListener('online', updateOnlineStatus);
+        window.addEventListener('offline', updateOnlineStatus);
+
+        // ═══════════════════════════════════════════════════════════════
+        // LOCALSTORAGE DRAFT PERSISTENCE
+        // ═══════════════════════════════════════════════════════════════
+        function saveDraft() {
+            try {
+                const draft = {
+                    territory: document.getElementById('territorySelect').value,
+                    marketer: document.getElementById('marketerSelect').value,
+                    coveredArea: document.getElementById('coveredAreaInput').value,
+                    invoiced: document.getElementById('totalSalesInvoiced').value,
+                    remitted: document.getElementById('totalRemitted').value,
+                    endingCash: document.getElementById('endingCashOnHand').value,
+                    replenishmentAmount: document.getElementById('replenishmentAmount').value,
+                    replenishmentPurpose: document.getElementById('replenishmentPurpose').value,
+                    newStoresCount: document.getElementById('newStoresCount').value,
+                    newStoreMaps: document.getElementById('newStoreMaps').value,
+                    savedAt: new Date().toISOString()
+                };
+                localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
+                document.getElementById('draftStatus').textContent = `Draft saved at ${new Date().toLocaleTimeString('en-PH', { hour: '2-digit', minute: '2-digit' })}`;
+            } catch (e) {
+                console.warn('Draft save failed:', e);
+            }
+        }
+
+        function restoreDraft() {
+            try {
+                const raw = localStorage.getItem(DRAFT_KEY);
+                if (!raw) return false;
+                const draft = JSON.parse(raw);
+                if (!draft.territory) return false;
+
+                // Restore in correct order (territory must be set first to populate marketers)
+                document.getElementById('territorySelect').value = draft.territory || '';
+                populateMarketers();
+                document.getElementById('marketerSelect').value = draft.marketer || '';
+                document.getElementById('coveredAreaInput').value = draft.coveredArea || '';
+                document.getElementById('totalSalesInvoiced').value = draft.invoiced || '';
+                document.getElementById('totalRemitted').value = draft.remitted || '';
+                document.getElementById('endingCashOnHand').value = draft.endingCash || '';
+                document.getElementById('replenishmentAmount').value = draft.replenishmentAmount || '';
+                document.getElementById('replenishmentPurpose').value = draft.replenishmentPurpose || '';
+                document.getElementById('newStoresCount').value = draft.newStoresCount || '0';
+                document.getElementById('newStoreMaps').value = draft.newStoreMaps || '';
+
+                calculateFinancialReconciliation();
+                const savedTime = new Date(draft.savedAt).toLocaleString('en-PH');
+                showToast(`📝 Draft restored from ${savedTime}`, 'info', 5000);
+                return true;
+            } catch (e) {
+                console.warn('Draft restore failed:', e);
+                return false;
+            }
+        }
+
+        function clearDraft() {
+            if (confirm("Clear your saved draft? This cannot be undone.")) {
+                localStorage.removeItem(DRAFT_KEY);
+                document.getElementById('eodForm').reset();
+                document.getElementById('attachmentPreviews').innerHTML = '';
+                attachedFiles = [];
+                calculateFinancialReconciliation();
+                showToast('🗑️ Draft cleared', 'info');
+            }
+        }
+
+        // ═══════════════════════════════════════════════════════════════
+        // VIEW SWITCHER
+        // ═══════════════════════════════════════════════════════════════
+        function switchView(view) {
+            const formView = document.getElementById('submissionFormView');
+            const dashView = document.getElementById('dashboardView');
+            const tabForm = document.getElementById('tabForm');
+            const tabDash = document.getElementById('tabDash');
+
+            if (view === 'form') {
+                formView.classList.remove('hidden');
+                dashView.classList.add('hidden');
+                tabForm.classList.add('active');
+                tabDash.classList.remove('active');
+            } else {
+                formView.classList.add('hidden');
+                dashView.classList.remove('hidden');
+                tabForm.classList.remove('active');
+                tabDash.classList.add('active');
+                renderDashboard();
+            }
+        }
+
+        // ═══════════════════════════════════════════════════════════════
+        // TERRITORY & MARKETER DROPDOWNS
+        // ═══════════════════════════════════════════════════════════════
+        function populateMarketers() {
+            const territory = document.getElementById('territorySelect').value;
+            const marketerSelect = document.getElementById('marketerSelect');
+            const coveredAreaInput = document.getElementById('coveredAreaInput');
+
+            marketerSelect.innerHTML = '<option value="" disabled selected>-- Select Marketer --</option>';
+
+            if (territory && territoryNetwork[territory]) {
+                territoryNetwork[territory].marketers.forEach(marketer => {
+                    const opt = document.createElement('option');
+                    opt.value = marketer;
+                    opt.textContent = marketer;
+                    marketerSelect.appendChild(opt);
+                });
+                coveredAreaInput.value = territoryNetwork[territory].areas;
+            } else {
+                coveredAreaInput.value = '';
+            }
+        }
+
+        function updateCoveredAreaHint() {
+            const territory = document.getElementById('territorySelect').value;
+            if (territory && territoryNetwork[territory]) {
+                document.getElementById('coveredAreaInput').value = territoryNetwork[territory].areas;
+            }
+        }
+
+        // ═══════════════════════════════════════════════════════════════
+        // FINANCIAL RECONCILIATION
+        // ═══════════════════════════════════════════════════════════════
+        function calculateFinancialReconciliation() {
+            const invoiced = parseFloat(document.getElementById('totalSalesInvoiced').value) || 0;
+            const remitted = parseFloat(document.getElementById('totalRemitted').value) || 0;
+            const endingCash = parseFloat(document.getElementById('endingCashOnHand').value) || 0;
+
+            const totalAccounted = remitted + endingCash;
+            const variance = totalAccounted - invoiced;
+
+            document.getElementById('totalAccountedDisplay').textContent = `₱${totalAccounted.toLocaleString('en-PH', { minimumFractionDigits: 2 })}`;
+            
+            const varianceEl = document.getElementById('varianceDisplay');
+            if (Math.abs(variance) < 0.01) {
+                varianceEl.textContent = `Balanced (₱0.00)`;
+                varianceEl.className = "font-bold text-emerald-400 ml-2";
+            } else if (variance < 0) {
+                varianceEl.textContent = `Shortage: -₱${Math.abs(variance).toLocaleString('en-PH', { minimumFractionDigits: 2 })}`;
+                varianceEl.className = "font-bold text-rose-400 ml-2";
+            } else {
+                varianceEl.textContent = `Overage: +₱${variance.toLocaleString('en-PH', { minimumFractionDigits: 2 })}`;
+                varianceEl.className = "font-bold text-brand-goldLight ml-2";
+            }
+        }
+
+        // ═══════════════════════════════════════════════════════════════
+        // ATTACHMENT HANDLER (with Base64 encoding)
+        // ═══════════════════════════════════════════════════════════════
+        function handleAttachmentSelect(event) {
+            const files = event.target.files;
+            const previewContainer = document.getElementById('attachmentPreviews');
+            previewContainer.innerHTML = '';
+            attachedFiles = [];
+
+            Array.from(files).forEach(file => {
+                if (file.size > 5 * 1024 * 1024) {
+                    showToast(`⚠️ ${file.name} exceeds 5MB — skipped`, 'error', 4000);
+                    return;
+                }
+
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const base64 = e.target.result.split(',')[1]; // Strip data URL prefix
+                    attachedFiles.push({
+                        name: file.name,
+                        type: file.type,
+                        base64: base64
+                    });
+
+                    const chip = document.createElement('span');
+                    chip.className = "text-xs bg-brand-bg px-3 py-1.5 rounded-full border border-brand-purple flex items-center gap-1 text-gray-300";
+                    chip.innerHTML = `📄 ${file.name}`;
+                    previewContainer.appendChild(chip);
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        // ═══════════════════════════════════════════════════════════════
+        // EOD SUBMISSION — POST to Google Apps Script
+        // ═══════════════════════════════════════════════════════════════
+        async function handleEODSubmit(e) {
+            e.preventDefault();
+
+            const submitBtn = document.getElementById('submitBtn');
+            const progressBox = document.getElementById('uploadProgress');
+            const progressFill = document.getElementById('progressFill');
+            const uploadStatus = document.getElementById('uploadStatus');
+
+            const report = {
+                reportId: 'EOD-' + Date.now().toString().slice(-6),
+                timestamp: new Date().toISOString(),
+                territory: document.getElementById('territorySelect').value,
+                marketer: document.getElementById('marketerSelect').value,
+                coveredArea: document.getElementById('coveredAreaInput').value,
+                invoiced: parseFloat(document.getElementById('totalSalesInvoiced').value) || 0,
+                remitted: parseFloat(document.getElementById('totalRemitted').value) || 0,
+                cashOnHand: parseFloat(document.getElementById('endingCashOnHand').value) || 0,
+                replenishmentAmount: parseFloat(document.getElementById('replenishmentAmount').value) || 0,
+                replenishmentPurpose: document.getElementById('replenishmentPurpose').value.trim(),
+                newStores: parseInt(document.getElementById('newStoresCount').value) || 0,
+                mapLinks: document.getElementById('newStoreMaps').value.trim(),
+                attachments: attachedFiles
+            };
+
+            // Validate
+            if (!report.territory || !report.marketer) {
+                showToast('⚠️ Please select both Territory and Marketer', 'error');
+                return;
+            }
+
+            // If offline, save locally and inform user
+            if (!navigator.onLine) {
+                showToast('📴 You are offline. Report saved locally — please submit when back online.', 'error', 6000);
+                saveDraft();
+                return;
+            }
+
+            // Show progress
+            submitBtn.disabled = true;
+            submitBtn.textContent = '📡 Transmitting...';
+            progressBox.classList.add('show');
+            progressFill.style.width = '20%';
+            uploadStatus.textContent = 'Preparing report data...';
+
+            try {
+                // Simulate progress steps
+                await new Promise(r => setTimeout(r, 400));
+                progressFill.style.width = '50%';
+                uploadStatus.textContent = `Uploading ${attachedFiles.length} attachment(s)...`;
+
+                const response = await fetch(APPS_SCRIPT_URL, {
+                    method: 'POST',
+                    mode: 'no-cors', // Required for Google Apps Script cross-origin
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify(report)
+                });
+
+                await new Promise(r => setTimeout(r, 600));
+                progressFill.style.width = '100%';
+                uploadStatus.textContent = '✅ Transmission complete!';
+
+                // Store locally for the dashboard view
+                submittedReports.unshift(report);
+
+                // Clear draft
+                localStorage.removeItem(DRAFT_KEY);
+
+                // Success feedback
+                setTimeout(() => {
+                    progressBox.classList.remove('show');
+                    showToast(`✅ EOD Report ${report.reportId} transmitted successfully`, 'success', 5000);
+                    
+                    // Reset form
+                    document.getElementById('eodForm').reset();
+                    document.getElementById('attachmentPreviews').innerHTML = '';
+                    attachedFiles = [];
+                    calculateFinancialReconciliation();
+
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = '🚀 Transmit EOD Settlement Report';
+
+                    // Auto-switch to dashboard after 1 second
+                    setTimeout(() => switchView('dashboard'), 1000);
+                }, 800);
+
+            } catch (err) {
+                console.error('Transmission error:', err);
+                progressBox.classList.remove('show');
+                showToast('❌ Transmission failed. Report saved locally — please retry.', 'error', 6000);
+                saveDraft();
+                submitBtn.disabled = false;
+                submitBtn.textContent = '🚀 Retry Transmission';
+            }
+        }
+
+        // ═══════════════════════════════════════════════════════════════
+        // DASHBOARD RENDERING
+        // ═══════════════════════════════════════════════════════════════
+        function renderDashboard() {
+            let totalInvoiced = 0;
+            let totalRemitted = 0;
+            let totalReplenishment = 0;
+
+            submittedReports.forEach(r => {
+                totalInvoiced += r.invoiced || 0;
+                totalRemitted += r.remitted || 0;
+                totalReplenishment += r.replenishmentAmount || 0;
+            });
+
+            document.getElementById('metricTotalReports').textContent = submittedReports.length;
+            document.getElementById('metricGrossSales').textContent = `₱${totalInvoiced.toLocaleString('en-PH', { minimumFractionDigits: 2 })}`;
+            document.getElementById('metricTotalRemitted').textContent = `₱${totalRemitted.toLocaleString('en-PH', { minimumFractionDigits: 2 })}`;
+            document.getElementById('metricReplenishments').textContent = `₱${totalReplenishment.toLocaleString('en-PH', { minimumFractionDigits: 2 })}`;
+
+            const tbody = document.getElementById('rosterTableBody');
+            tbody.innerHTML = '';
+
+            Object.keys(territoryNetwork).forEach(terr => {
+                territoryNetwork[terr].marketers.forEach(marketer => {
+                    const match = submittedReports.find(r => r.marketer === marketer);
+
+                    const tr = document.createElement('tr');
+                    tr.className = "hover:bg-brand-bgLight/30 transition-colors";
+
+                    if (match) {
+                        tr.innerHTML = `
+                            <td class="p-3 font-semibold text-white">${terr}</td>
+                            <td class="p-3 text-brand-goldLight">${marketer}</td>
+                            <td class="p-3 text-center"><span class="bg-emerald-900/60 text-emerald-300 border border-emerald-500/30 px-2 py-0.5 rounded text-[10px] font-bold">SUBMITTED</span></td>
+                            <td class="p-3 text-right text-emerald-400 font-medium">₱${(match.invoiced || 0).toLocaleString('en-PH', { minimumFractionDigits: 2 })}</td>
+                            <td class="p-3 text-right text-sky-400 font-medium">₱${(match.remitted || 0).toLocaleString('en-PH', { minimumFractionDigits: 2 })}</td>
+                            <td class="p-3 text-right text-brand-gold font-medium">₱${(match.cashOnHand || 0).toLocaleString('en-PH', { minimumFractionDigits: 2 })}</td>
+                            <td class="p-3 text-center text-white">${match.newStores || 0}</td>
+                            <td class="p-3 text-center text-xs text-gray-400">${(match.attachments || []).length} files</td>
+                        `;
+                    } else {
+                        tr.innerHTML = `
+                            <td class="p-3 font-semibold text-gray-400">${terr}</td>
+                            <td class="p-3 text-gray-400">${marketer}</td>
+                            <td class="p-3 text-center"><span class="bg-rose-900/40 text-rose-300 border border-rose-500/30 px-2 py-0.5 rounded text-[10px] font-bold">PENDING</span></td>
+                            <td class="p-3 text-right text-gray-500">₱0.00</td>
+                            <td class="p-3 text-right text-gray-500">₱0.00</td>
+                            <td class="p-3 text-right text-gray-500">₱0.00</td>
+                            <td class="p-3 text-center text-gray-500">0</td>
+                            <td class="p-3 text-center text-gray-500">-</td>
+                        `;
+                    }
+                    tbody.appendChild(tr);
+                });
+            });
+        }
+
+        // ═══════════════════════════════════════════════════════════════
+        // INIT
+        // ═══════════════════════════════════════════════════════════════
+        document.addEventListener('DOMContentLoaded', () => {
+            const now = new Date();
+            document.getElementById('currentDateDisplay').textContent = now.toLocaleDateString('en-PH', {
+                year: 'numeric', month: 'short', day: 'numeric'
+            });
+            calculateFinancialReconciliation();
+            updateOnlineStatus();
+            // Attempt to restore any saved draft
+            restoreDraft();
+        });
+    </script>
+</body>
+</html>
