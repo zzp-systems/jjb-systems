@@ -50,7 +50,6 @@
         .btn-gold:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(255, 183, 0, 0.5); }
         .btn-gold:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
         .tab-btn.active { background: #ffb700; color: #1a052b; font-weight: 700; }
-
         .cadence-btn {
             padding: 0.5rem 1rem; border-radius: 9999px; font-size: 0.75rem;
             font-weight: 600; transition: all 0.2s ease; cursor: pointer;
@@ -62,7 +61,6 @@
             color: #1a052b; border-color: #ffb700;
             box-shadow: 0 4px 12px rgba(255, 183, 0, 0.4);
         }
-
         .toast {
             position: fixed; top: 20px; right: 20px; background: #2c0e4a;
             border: 2px solid #ffb700; color: #ffcc33; padding: 12px 20px;
@@ -73,13 +71,11 @@
         .toast.show { transform: translateY(0); }
         .toast.success { border-color: #10b981; color: #6ee7b7; }
         .toast.error { border-color: #ef4444; color: #fca5a5; }
-
         .offline-banner {
             display: none; background: #C0392B; color: white; text-align: center;
             padding: 8px; font-size: 0.85rem; font-weight: 600;
         }
         .offline-banner.show { display: block; }
-
         .upload-progress {
             display: none; margin-top: 16px; background: #1a052b;
             border: 1.5px solid #4b1b7a; border-radius: 10px; padding: 16px;
@@ -93,7 +89,6 @@
             height: 100%; background: linear-gradient(90deg, #ffcc33, #ff8c00);
             width: 0%; transition: width 0.3s ease;
         }
-
         .date-chip {
             display: inline-block; background: rgba(192, 57, 43, 0.3);
             color: #fca5a5; border: 1px solid rgba(239, 68, 68, 0.4);
@@ -105,10 +100,8 @@
             border-color: rgba(255, 183, 0, 0.4);
         }
         .missing-dates-cell { max-width: 200px; overflow-x: auto; white-space: nowrap; }
-
         .roster-table th { white-space: nowrap; }
         .roster-table td { white-space: nowrap; }
-
         .spinner {
             display: inline-block; width: 14px; height: 14px;
             border: 2px solid rgba(255, 183, 0, 0.3);
@@ -300,8 +293,6 @@
 
         <!-- VIEW 2: DASHBOARD -->
         <section id="dashboardView" class="hidden space-y-6">
-
-            <!-- Header + Cadence Selector -->
             <div class="custom-card p-6">
                 <div class="flex flex-wrap items-center justify-between gap-4 mb-4">
                     <div>
@@ -335,7 +326,6 @@
                 </div>
             </div>
 
-            <!-- Metric Cards -->
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-5">
                 <div class="custom-card p-5 border-l-4 border-l-brand-gold">
                     <span class="text-xs text-gray-400 uppercase font-semibold">Reports Transmitted</span>
@@ -364,7 +354,6 @@
                 </div>
             </div>
 
-            <!-- Loading Overlay / Roster Table -->
             <div class="custom-card p-6 overflow-hidden relative" id="rosterContainer">
                 <div id="rosterLoading" class="hidden absolute inset-0 bg-brand-bg/70 backdrop-blur-sm flex flex-col items-center justify-center z-20 gap-3">
                     <div class="spinner" style="width: 32px; height: 32px; border-width: 3px;"></div>
@@ -383,7 +372,6 @@
                 </div>
             </div>
 
-            <!-- Legend -->
             <div class="custom-card p-4 text-xs text-gray-400 flex flex-wrap gap-4 items-center">
                 <span class="font-semibold text-brand-goldLight">Legend:</span>
                 <span><span class="inline-block w-3 h-3 rounded-full bg-emerald-400 mr-1"></span>Full Compliance</span>
@@ -400,9 +388,9 @@
 
     <script>
         // ═══════════════════════════════════════════════════════════════
-        // ⚙️ CONFIGURATION
+        // ⚙️ CONFIGURATION — LIVE DEPLOYMENT URL
         // ═══════════════════════════════════════════════════════════════
-        const APPS_SCRIPT_URL = "https://script.google.com/macros/s/YOUR_DEPLOYMENT_ID_HERE/exec";
+        const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwySG2N4LxsStI3_Yzlw11nKe3Rv9BaUayu4nSd29yqmhV1r7GVodYaoEHmkX28cquv/exec";
         const DRAFT_KEY = "jjb_eod_draft_v1";
         const REPORTS_CACHE_KEY = "jjb_eod_reports_cache_v2";
 
@@ -440,7 +428,7 @@
         }
 
         // ═══════════════════════════════════════════════════════════════
-        // SYNC STATUS BADGE
+        // SYNC BADGE
         // ═══════════════════════════════════════════════════════════════
         function updateSyncBadge(state) {
             const badge = document.getElementById('syncStatusBadge');
@@ -470,7 +458,7 @@
         }
 
         // ═══════════════════════════════════════════════════════════════
-        // OFFLINE DETECTION
+        // OFFLINE
         // ═══════════════════════════════════════════════════════════════
         function updateOnlineStatus() {
             const banner = document.getElementById('offlineBanner');
@@ -481,7 +469,7 @@
         window.addEventListener('offline', updateOnlineStatus);
 
         // ═══════════════════════════════════════════════════════════════
-        // DRAFT PERSISTENCE (for form)
+        // DRAFT
         // ═══════════════════════════════════════════════════════════════
         function saveDraft() {
             try {
@@ -523,7 +511,7 @@
                 document.getElementById('newStoreMaps').value = draft.newStoreMaps || '';
 
                 calculateFinancialReconciliation();
-                showToast(`📝 Draft restored from ${new Date(draft.savedAt).toLocaleString('en-PH')}`, 'info', 5000);
+                showToast(`📝 Draft restored`, 'info', 4000);
                 return true;
             } catch (e) { return false; }
         }
@@ -540,7 +528,7 @@
         }
 
         // ═══════════════════════════════════════════════════════════════
-        // CACHED REPORTS (offline fallback)
+        // CACHE
         // ═══════════════════════════════════════════════════════════════
         function cacheReports() {
             try {
@@ -566,14 +554,10 @@
         }
 
         // ═══════════════════════════════════════════════════════════════
-        // FETCH FROM GOOGLE SHEET
+        // FETCH FROM SHEET
         // ═══════════════════════════════════════════════════════════════
         async function fetchReportsFromSheet() {
             if (isFetching) return false;
-            if (!APPS_SCRIPT_URL || APPS_SCRIPT_URL.includes('YOUR_DEPLOYMENT_ID')) {
-                showToast('⚠️ Apps Script URL not configured', 'error', 5000);
-                return false;
-            }
             if (!navigator.onLine) return false;
 
             isFetching = true;
@@ -594,12 +578,8 @@
                 throw new Error(data.message || 'Unexpected response');
             } catch (err) {
                 console.error('Fetch failed:', err);
-                // Fallback to cache
-                if (loadCachedReports()) {
-                    updateSyncBadge('cached');
-                } else {
-                    updateSyncBadge('error');
-                }
+                if (loadCachedReports()) updateSyncBadge('cached');
+                else updateSyncBadge('error');
                 return false;
             } finally {
                 isFetching = false;
@@ -607,11 +587,10 @@
         }
 
         // ═══════════════════════════════════════════════════════════════
-        // SYNC + RENDER WRAPPER
+        // SYNC + RENDER
         // ═══════════════════════════════════════════════════════════════
         async function syncAndRender(showFeedback = false) {
             const loading = document.getElementById('rosterLoading');
-            const container = document.getElementById('rosterContainer');
             if (loading) loading.classList.remove('hidden');
 
             const ok = await fetchReportsFromSheet();
@@ -620,16 +599,13 @@
             renderDashboard();
 
             if (showFeedback) {
-                if (ok) {
-                    showToast(`✅ Synced ${submittedReports.length} report(s) from Google Sheet`, 'success', 3000);
-                } else if (navigator.onLine) {
-                    showToast('⚠️ Could not reach server — showing cached data', 'error', 4000);
-                }
+                if (ok) showToast(`✅ Synced ${submittedReports.length} report(s)`, 'success', 3000);
+                else if (navigator.onLine) showToast('⚠️ Could not reach server — showing cached data', 'error', 4000);
             }
         }
 
         // ═══════════════════════════════════════════════════════════════
-        // VIEW SWITCHER
+        // VIEW SWITCH
         // ═══════════════════════════════════════════════════════════════
         function switchView(view) {
             const formView = document.getElementById('submissionFormView');
@@ -647,13 +623,12 @@
                 dashView.classList.remove('hidden');
                 tabForm.classList.remove('active');
                 tabDash.classList.add('active');
-                // Fetch fresh data every time dashboard is opened
                 syncAndRender(false);
             }
         }
 
         // ═══════════════════════════════════════════════════════════════
-        // CADENCE SELECTOR
+        // CADENCE
         // ═══════════════════════════════════════════════════════════════
         function setCadence(cadence) {
             currentCadence = cadence;
@@ -664,9 +639,6 @@
             renderDashboard();
         }
 
-        // ═══════════════════════════════════════════════════════════════
-        // DATE RANGE HELPER
-        // ═══════════════════════════════════════════════════════════════
         function getDateRange(cadence) {
             const now = new Date();
             const endOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);
@@ -714,17 +686,11 @@
             return { start, end: endOfToday, label, meta };
         }
 
-        // ═══════════════════════════════════════════════════════════════
-        // LOCAL DATE KEY
-        // ═══════════════════════════════════════════════════════════════
         function localDateKey(date) {
             const d = new Date(date);
             return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
         }
 
-        // ═══════════════════════════════════════════════════════════════
-        // CADENCE STATS COMPUTATION
-        // ═══════════════════════════════════════════════════════════════
         function computeCadenceStats(marketer, cadence) {
             const { start, end } = getDateRange(cadence);
 
@@ -755,19 +721,12 @@
             const missingDates = [];
             if (cadence === 'monthly') {
                 for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
-                    if (!distinctDateKeys.has(localDateKey(d))) {
-                        missingDates.push(new Date(d));
-                    }
+                    if (!distinctDateKeys.has(localDateKey(d))) missingDates.push(new Date(d));
                 }
             }
 
             return {
-                reports,
-                submittedCount: reports.length,
-                submittedDays,
-                totalDays,
-                daysMissed,
-                missingDates,
+                reports, submittedCount: reports.length, submittedDays, totalDays, daysMissed, missingDates,
                 invoiced, remitted, cashOnHand, newStores, replenishment,
                 attachments: attachmentTotal
             };
@@ -803,7 +762,7 @@
         }
 
         // ═══════════════════════════════════════════════════════════════
-        // FINANCIAL RECONCILIATION
+        // FINANCIAL
         // ═══════════════════════════════════════════════════════════════
         function calculateFinancialReconciliation() {
             const invoiced = parseFloat(document.getElementById('totalSalesInvoiced').value) || 0;
@@ -855,7 +814,7 @@
         }
 
         // ═══════════════════════════════════════════════════════════════
-        // SUBMIT EOD REPORT
+        // SUBMIT
         // ═══════════════════════════════════════════════════════════════
         async function handleEODSubmit(e) {
             e.preventDefault();
@@ -887,7 +846,7 @@
             }
 
             if (!navigator.onLine) {
-                showToast('📴 You are offline. Report saved locally — please submit when back online.', 'error', 6000);
+                showToast('📴 Offline. Draft preserved — retry when online.', 'error', 6000);
                 saveDraft();
                 return;
             }
@@ -915,11 +874,7 @@
                 uploadStatus.textContent = '✅ Transmission complete! Syncing dashboard...';
 
                 localStorage.removeItem(DRAFT_KEY);
-
-                // Give Apps Script a moment to finish writing to Sheet
                 await new Promise(r => setTimeout(r, 1200));
-
-                // Fetch fresh data from Sheet
                 await fetchReportsFromSheet();
                 cacheReports();
 
@@ -944,7 +899,7 @@
             } catch (err) {
                 console.error('Transmission error:', err);
                 progressBox.classList.remove('show');
-                showToast('❌ Transmission failed. Draft preserved — please retry.', 'error', 6000);
+                showToast('❌ Transmission failed. Draft preserved.', 'error', 6000);
                 saveDraft();
                 submitBtn.disabled = false;
                 submitBtn.textContent = '🚀 Retry Transmission';
@@ -952,7 +907,7 @@
         }
 
         // ═══════════════════════════════════════════════════════════════
-        // DASHBOARD RENDER
+        // RENDER DASHBOARD
         // ═══════════════════════════════════════════════════════════════
         function renderDashboard() {
             const range = getDateRange(currentCadence);
@@ -1071,12 +1026,8 @@
             updateOnlineStatus();
             restoreDraft();
 
-            // Show cached data immediately (fast paint)
-            if (loadCachedReports()) {
-                updateSyncBadge('cached');
-            }
+            if (loadCachedReports()) updateSyncBadge('cached');
 
-            // Then try to fetch fresh from Sheet (background)
             const ok = await fetchReportsFromSheet();
             if (ok) updateSyncBadge('live');
         });
