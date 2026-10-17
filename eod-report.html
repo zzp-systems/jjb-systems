@@ -24,90 +24,34 @@
         }
     </script>
     <style>
-        .custom-card {
-            background: rgba(44, 14, 74, 0.85);
-            border: 1px solid #4b1b7a;
-            border-radius: 20px;
-            backdrop-filter: blur(12px);
-            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
-        }
-        .form-label {
-            display: block; font-size: 0.85rem; font-weight: 600; color: #ffcc33;
-            margin-bottom: 0.4rem; text-transform: uppercase; letter-spacing: 0.05em;
-        }
-        .form-input {
-            width: 100%; background: #1a052b; border: 1.5px solid #4b1b7a;
-            border-radius: 10px; padding: 0.75rem 1rem; color: #ffffff;
-            outline: none; transition: all 0.2s ease; font-size: 0.95rem;
-        }
+        .custom-card { background: rgba(44, 14, 74, 0.85); border: 1px solid #4b1b7a; border-radius: 20px; backdrop-filter: blur(12px); box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4); }
+        .form-label { display: block; font-size: 0.8rem; font-weight: 600; color: #ffcc33; margin-bottom: 0.4rem; text-transform: uppercase; letter-spacing: 0.05em; }
+        .form-input { width: 100%; background: #1a052b; border: 1.5px solid #4b1b7a; border-radius: 10px; padding: 0.65rem 1rem; color: #ffffff; outline: none; transition: all 0.2s ease; font-size: 0.95rem; }
         .form-input:focus { border-color: #ffb700; box-shadow: 0 0 0 3px rgba(255, 183, 0, 0.2); }
-        .btn-gold {
-            background: linear-gradient(145deg, #ffcc33, #ff8c00); color: #1a052b;
-            font-weight: 700; border-radius: 9999px; padding: 0.75rem 2rem;
-            transition: transform 0.15s ease, box-shadow 0.15s ease;
-            box-shadow: 0 4px 15px rgba(255, 183, 0, 0.3);
-        }
+        .form-input[readonly] { background: rgba(26, 5, 43, 0.5); color: #ffb700; cursor: not-allowed; border-color: #4b1b7a; }
+        .btn-gold { background: linear-gradient(145deg, #ffcc33, #ff8c00); color: #1a052b; font-weight: 700; border-radius: 9999px; padding: 0.75rem 2rem; transition: transform 0.15s ease, box-shadow 0.15s ease; box-shadow: 0 4px 15px rgba(255, 183, 0, 0.3); }
         .btn-gold:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(255, 183, 0, 0.5); }
         .btn-gold:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
         .tab-btn.active { background: #ffb700; color: #1a052b; font-weight: 700; }
-        .cadence-btn {
-            padding: 0.5rem 1rem; border-radius: 9999px; font-size: 0.75rem;
-            font-weight: 600; transition: all 0.2s ease; cursor: pointer;
-            border: 1px solid #4b1b7a; color: #9ca3af; background: #1a052b;
-        }
+        .cadence-btn { padding: 0.5rem 1rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; transition: all 0.2s ease; cursor: pointer; border: 1px solid #4b1b7a; color: #9ca3af; background: #1a052b; }
         .cadence-btn:hover { border-color: #ffb700; color: #ffcc33; }
-        .cadence-btn.active {
-            background: linear-gradient(145deg, #ffcc33, #ff8c00);
-            color: #1a052b; border-color: #ffb700;
-            box-shadow: 0 4px 12px rgba(255, 183, 0, 0.4);
-        }
-        .toast {
-            position: fixed; top: 20px; right: 20px; background: #2c0e4a;
-            border: 2px solid #ffb700; color: #ffcc33; padding: 12px 20px;
-            border-radius: 12px; font-weight: 600; font-size: 0.9rem;
-            z-index: 9999; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-            transform: translateY(-120%); transition: transform 0.3s ease; max-width: 320px;
-        }
+        .cadence-btn.active { background: linear-gradient(145deg, #ffcc33, #ff8c00); color: #1a052b; border-color: #ffb700; box-shadow: 0 4px 12px rgba(255, 183, 0, 0.4); }
+        .toast { position: fixed; top: 20px; right: 20px; background: #2c0e4a; border: 2px solid #ffb700; color: #ffcc33; padding: 12px 20px; border-radius: 12px; font-weight: 600; font-size: 0.9rem; z-index: 9999; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5); transform: translateY(-120%); transition: transform 0.3s ease; max-width: 320px; }
         .toast.show { transform: translateY(0); }
         .toast.success { border-color: #10b981; color: #6ee7b7; }
         .toast.error { border-color: #ef4444; color: #fca5a5; }
-        .offline-banner {
-            display: none; background: #C0392B; color: white; text-align: center;
-            padding: 8px; font-size: 0.85rem; font-weight: 600;
-        }
+        .offline-banner { display: none; background: #C0392B; color: white; text-align: center; padding: 8px; font-size: 0.85rem; font-weight: 600; }
         .offline-banner.show { display: block; }
-        .upload-progress {
-            display: none; margin-top: 16px; background: #1a052b;
-            border: 1.5px solid #4b1b7a; border-radius: 10px; padding: 16px;
-        }
+        .upload-progress { display: none; margin-top: 16px; background: #1a052b; border: 1.5px solid #4b1b7a; border-radius: 10px; padding: 16px; }
         .upload-progress.show { display: block; }
-        .progress-bar-bg {
-            width: 100%; height: 8px; background: #2c0e4a;
-            border-radius: 4px; overflow: hidden; margin-top: 8px;
-        }
-        .progress-bar-fill {
-            height: 100%; background: linear-gradient(90deg, #ffcc33, #ff8c00);
-            width: 0%; transition: width 0.3s ease;
-        }
-        .date-chip {
-            display: inline-block; background: rgba(192, 57, 43, 0.3);
-            color: #fca5a5; border: 1px solid rgba(239, 68, 68, 0.4);
-            padding: 2px 8px; border-radius: 6px; font-size: 0.7rem;
-            margin: 2px 2px 2px 0; font-weight: 600;
-        }
-        .date-chip.rolled {
-            background: rgba(255, 140, 0, 0.2); color: #ffcc33;
-            border-color: rgba(255, 183, 0, 0.4);
-        }
+        .progress-bar-bg { width: 100%; height: 8px; background: #2c0e4a; border-radius: 4px; overflow: hidden; margin-top: 8px; }
+        .progress-bar-fill { height: 100%; background: linear-gradient(90deg, #ffcc33, #ff8c00); width: 0%; transition: width 0.3s ease; }
+        .date-chip { display: inline-block; background: rgba(192, 57, 43, 0.3); color: #fca5a5; border: 1px solid rgba(239, 68, 68, 0.4); padding: 2px 8px; border-radius: 6px; font-size: 0.7rem; margin: 2px 2px 2px 0; font-weight: 600; }
+        .date-chip.rolled { background: rgba(255, 140, 0, 0.2); color: #ffcc33; border-color: rgba(255, 183, 0, 0.4); }
         .missing-dates-cell { max-width: 200px; overflow-x: auto; white-space: nowrap; }
         .roster-table th { white-space: nowrap; }
         .roster-table td { white-space: nowrap; }
-        .spinner {
-            display: inline-block; width: 14px; height: 14px;
-            border: 2px solid rgba(255, 183, 0, 0.3);
-            border-top-color: #ffb700; border-radius: 50%;
-            animation: spin 0.8s linear infinite;
-        }
+        .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid rgba(255, 183, 0, 0.3); border-top-color: #ffb700; border-radius: 50%; animation: spin 0.8s linear infinite; }
         @keyframes spin { to { transform: rotate(360deg); } }
     </style>
 </head>
@@ -162,6 +106,8 @@
                 </div>
 
                 <form id="eodForm" onsubmit="handleEODSubmit(event)" class="space-y-8">
+                    
+                    <!-- SECTION 1: Territory & Marketer -->
                     <div>
                         <h3 class="text-base font-heading font-semibold text-brand-gold mb-4 flex items-center gap-2">
                             <span>1.</span> Marketer Profile & Territory Assignment
@@ -194,24 +140,53 @@
                         </div>
                     </div>
 
+                    <!-- SECTION 2: Financial Breakdown -->
                     <div class="border-t border-brand-purple/60 pt-6">
                         <h3 class="text-base font-heading font-semibold text-brand-gold mb-4 flex items-center gap-2">
-                            <span>2.</span> Financial Collections & Ending Cash Settlement
+                            <span>2.</span> Daily Sales Breakdown & Ending Cash Settlement
                         </h3>
-                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-5">
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-5 mb-4">
                             <div>
-                                <label class="form-label" for="totalSalesInvoiced">Total Sales Invoiced (₱) *</label>
-                                <input type="number" step="0.01" id="totalSalesInvoiced" class="form-input" placeholder="0.00" oninput="calculateFinancialReconciliation(); saveDraft();" required>
+                                <label class="form-label" for="cashSales">Cash Sales (₱)</label>
+                                <input type="number" step="0.01" id="cashSales" class="form-input" placeholder="0.00" oninput="calculateFinancialReconciliation(); saveDraft();">
                             </div>
                             <div>
-                                <label class="form-label" for="totalRemitted">Remitted / Deposited (₱) *</label>
+                                <label class="form-label" for="cashPayments">Cash Payments (₱)</label>
+                                <input type="number" step="0.01" id="cashPayments" class="form-input" placeholder="0.00" oninput="calculateFinancialReconciliation(); saveDraft();">
+                            </div>
+                            <div>
+                                <label class="form-label" for="datedCheck">Dated Check (₱)</label>
+                                <input type="number" step="0.01" id="datedCheck" class="form-input" placeholder="0.00" oninput="calculateFinancialReconciliation(); saveDraft();">
+                            </div>
+                            <div>
+                                <label class="form-label" for="pdc">PDC / Post-Dated Check (₱)</label>
+                                <input type="number" step="0.01" id="pdc" class="form-input" placeholder="0.00" oninput="calculateFinancialReconciliation(); saveDraft();">
+                            </div>
+                            <div>
+                                <label class="form-label" for="credit">Credit (₱)</label>
+                                <input type="number" step="0.01" id="credit" class="form-input" placeholder="0.00" oninput="calculateFinancialReconciliation(); saveDraft();">
+                            </div>
+                            <div>
+                                <label class="form-label" for="consignment">Consignment (₱)</label>
+                                <input type="number" step="0.01" id="consignment" class="form-input" placeholder="0.00" oninput="calculateFinancialReconciliation(); saveDraft();">
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-5 p-4 rounded-xl bg-brand-bg/50 border border-brand-purple">
+                            <div>
+                                <label class="form-label text-white" for="totalSalesInvoiced">Income for the Day (Total Invoiced)</label>
+                                <input type="text" id="totalSalesInvoiced" class="form-input font-bold text-lg" readonly value="₱0.00">
+                            </div>
+                            <div>
+                                <label class="form-label text-white" for="totalRemitted">Remitted / Deposited (₱) *</label>
                                 <input type="number" step="0.01" id="totalRemitted" class="form-input" placeholder="0.00" oninput="calculateFinancialReconciliation(); saveDraft();" required>
                             </div>
                             <div>
-                                <label class="form-label" for="endingCashOnHand">Ending Cash on Hand (₱) *</label>
+                                <label class="form-label text-white" for="endingCashOnHand">Ending Cash on Hand (COH) *</label>
                                 <input type="number" step="0.01" id="endingCashOnHand" class="form-input" placeholder="0.00" oninput="calculateFinancialReconciliation(); saveDraft();" required>
                             </div>
                         </div>
+
                         <div id="financialVarianceBox" class="mt-4 p-4 rounded-xl border border-brand-purple bg-brand-bg/90 flex flex-col sm:flex-row justify-between items-center text-sm gap-2">
                             <div>
                                 <span class="text-gray-400">Total Accounted For:</span>
@@ -224,9 +199,39 @@
                         </div>
                     </div>
 
+                    <!-- SECTION 3: Inventory & Product Movement -->
                     <div class="border-t border-brand-purple/60 pt-6">
                         <h3 class="text-base font-heading font-semibold text-brand-gold mb-4 flex items-center gap-2">
-                            <span>3.</span> Operations & Cash Replenishment Request
+                            <span>3.</span> Inventory & Product Disposals
+                        </h3>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-4">
+                            <div>
+                                <label class="form-label" for="packsDisposed">Packs Disposed</label>
+                                <input type="number" id="packsDisposed" min="0" value="0" class="form-input" oninput="saveDraft();">
+                            </div>
+                            <div>
+                                <label class="form-label" for="capital">Capital of Product (₱)</label>
+                                <input type="number" step="0.01" id="capital" class="form-input" placeholder="0.00" oninput="saveDraft();">
+                            </div>
+                            <div>
+                                <label class="form-label" for="productSales">Product Sales (₱)</label>
+                                <input type="number" step="0.01" id="productSales" class="form-input" placeholder="0.00" oninput="saveDraft();">
+                            </div>
+                            <div>
+                                <label class="form-label" for="inventoryEnd">Inventory End (Packs)</label>
+                                <input type="number" id="inventoryEnd" min="0" value="0" class="form-input" oninput="saveDraft();">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="form-label" for="disposalNotes">Per-Product Disposal Notes (Optional)</label>
+                            <textarea id="disposalNotes" rows="2" class="form-input" placeholder="e.g. Otap: 5 packs, Biscocho: 2 packs expired" oninput="saveDraft();"></textarea>
+                        </div>
+                    </div>
+
+                    <!-- SECTION 4: Replenishment -->
+                    <div class="border-t border-brand-purple/60 pt-6">
+                        <h3 class="text-base font-heading font-semibold text-brand-gold mb-4 flex items-center gap-2">
+                            <span>4.</span> Operations & Cash Replenishment Request
                         </h3>
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
                             <div>
@@ -240,9 +245,10 @@
                         </div>
                     </div>
 
+                    <!-- SECTION 5: New Stores -->
                     <div class="border-t border-brand-purple/60 pt-6">
                         <h3 class="text-base font-heading font-semibold text-brand-gold mb-4 flex items-center gap-2">
-                            <span>4.</span> Territory Expansion & New Stores Added
+                            <span>5.</span> Territory Expansion & New Stores Added
                         </h3>
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
                             <div>
@@ -256,9 +262,10 @@
                         </div>
                     </div>
 
+                    <!-- SECTION 6: Attachments -->
                     <div class="border-t border-brand-purple/60 pt-6">
                         <h3 class="text-base font-heading font-semibold text-brand-gold mb-4 flex items-center gap-2">
-                            <span>5.</span> Documentary Attachments (Images / Receipts)
+                            <span>6.</span> Documentary Attachments (Images / Receipts)
                         </h3>
                         <p class="text-xs text-gray-300 mb-4">Upload clean, readable photos of Deposit Slips, Sales Invoices, or Collection Receipts.</p>
                         <div class="border-2 border-dashed border-brand-purple rounded-xl p-6 text-center bg-brand-bg/40 hover:border-brand-gold transition-colors">
@@ -271,6 +278,7 @@
                         </div>
                     </div>
 
+                    <!-- Submit -->
                     <div class="pt-6 text-center">
                         <button type="submit" id="submitBtn" class="btn-gold w-full sm:w-auto text-base">
                             🚀 Transmit EOD Settlement Report
@@ -293,6 +301,7 @@
 
         <!-- VIEW 2: DASHBOARD -->
         <section id="dashboardView" class="hidden space-y-6">
+            <!-- Header + Cadence Selector -->
             <div class="custom-card p-6">
                 <div class="flex flex-wrap items-center justify-between gap-4 mb-4">
                     <div>
@@ -326,6 +335,7 @@
                 </div>
             </div>
 
+            <!-- Metrics -->
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-5">
                 <div class="custom-card p-5 border-l-4 border-l-brand-gold">
                     <span class="text-xs text-gray-400 uppercase font-semibold">Reports Transmitted</span>
@@ -340,7 +350,7 @@
                 <div class="custom-card p-5 border-l-4 border-l-emerald-400">
                     <span class="text-xs text-gray-400 uppercase font-semibold">Gross Sales Invoiced</span>
                     <h4 id="metricGrossSales" class="text-2xl font-bold font-heading text-emerald-400 mt-1">₱0.00</h4>
-                    <span class="text-[11px] text-gray-400">Invoiced Value</span>
+                    <span class="text-[11px] text-gray-400">Income for the day</span>
                 </div>
                 <div class="custom-card p-5 border-l-4 border-l-sky-400">
                     <span class="text-xs text-gray-400 uppercase font-semibold">Total Bank Remittances</span>
@@ -354,6 +364,7 @@
                 </div>
             </div>
 
+            <!-- Roster Table -->
             <div class="custom-card p-6 overflow-hidden relative" id="rosterContainer">
                 <div id="rosterLoading" class="hidden absolute inset-0 bg-brand-bg/70 backdrop-blur-sm flex flex-col items-center justify-center z-20 gap-3">
                     <div class="spinner" style="width: 32px; height: 32px; border-width: 3px;"></div>
@@ -371,14 +382,6 @@
                     </table>
                 </div>
             </div>
-
-            <div class="custom-card p-4 text-xs text-gray-400 flex flex-wrap gap-4 items-center">
-                <span class="font-semibold text-brand-goldLight">Legend:</span>
-                <span><span class="inline-block w-3 h-3 rounded-full bg-emerald-400 mr-1"></span>Full Compliance</span>
-                <span><span class="inline-block w-3 h-3 rounded-full bg-amber-400 mr-1"></span>Partial</span>
-                <span><span class="inline-block w-3 h-3 rounded-full bg-rose-400 mr-1"></span>No Submission</span>
-                <span class="text-gray-500">· Missed-days computed from period start to today.</span>
-            </div>
         </section>
     </main>
 
@@ -388,14 +391,14 @@
 
     <script>
         // ═══════════════════════════════════════════════════════════════
-        // ⚙️ CONFIGURATION — LIVE DEPLOYMENT URL
+        // ⚙️ CONFIGURATION
         // ═══════════════════════════════════════════════════════════════
         const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwySG2N4LxsStI3_Yzlw11nKe3Rv9BaUayu4nSd29yqmhV1r7GVodYaoEHmkX28cquv/exec";
-        const DRAFT_KEY = "jjb_eod_draft_v1";
-        const REPORTS_CACHE_KEY = "jjb_eod_reports_cache_v2";
+        const DRAFT_KEY = "jjb_eod_draft_v2"; // Bumped version for new fields
+        const REPORTS_CACHE_KEY = "jjb_eod_reports_cache_v3"; // Bumped version for new schema
 
         // ═══════════════════════════════════════════════════════════════
-        // TERRITORY NETWORK
+        // TERRITORY NETWORK (CORRECTED)
         // ═══════════════════════════════════════════════════════════════
         const territoryNetwork = {
             "West Visayas": { marketers: ["Melchor Fernando"], areas: "ILO-ILO, BACOLOD, NEGROS OCC, AKLAN, ANTIQUE, DUMAGUETE" },
@@ -409,7 +412,7 @@
         };
 
         // ═══════════════════════════════════════════════════════════════
-        // STATE
+        // STATE & UTILITIES
         // ═══════════════════════════════════════════════════════════════
         let submittedReports = [];
         let attachedFiles = [];
@@ -417,9 +420,6 @@
         let isFetching = false;
         let lastSyncTimestamp = null;
 
-        // ═══════════════════════════════════════════════════════════════
-        // TOAST
-        // ═══════════════════════════════════════════════════════════════
         function showToast(message, type = 'info', duration = 3000) {
             const toast = document.getElementById('toast');
             toast.textContent = message;
@@ -427,39 +427,20 @@
             setTimeout(() => { toast.className = 'toast ' + type; }, duration);
         }
 
-        // ═══════════════════════════════════════════════════════════════
-        // SYNC BADGE
-        // ═══════════════════════════════════════════════════════════════
         function updateSyncBadge(state) {
             const badge = document.getElementById('syncStatusBadge');
             const timeEl = document.getElementById('lastSyncTime');
             if (!badge) return;
 
-            if (state === 'loading') {
-                badge.textContent = '⏳ SYNCING...';
-                badge.className = 'text-[10px] bg-amber-900/40 text-amber-300 border border-amber-500/30 px-2 py-0.5 rounded font-bold';
-            } else if (state === 'live') {
-                badge.textContent = '✅ LIVE';
-                badge.className = 'text-[10px] bg-emerald-900/40 text-emerald-300 border border-emerald-500/30 px-2 py-0.5 rounded font-bold';
-            } else if (state === 'cached') {
-                badge.textContent = '💾 CACHED';
-                badge.className = 'text-[10px] bg-sky-900/40 text-sky-300 border border-sky-500/30 px-2 py-0.5 rounded font-bold';
-            } else if (state === 'error') {
-                badge.textContent = '⚠️ OFFLINE';
-                badge.className = 'text-[10px] bg-rose-900/40 text-rose-300 border border-rose-500/30 px-2 py-0.5 rounded font-bold';
-            } else {
-                badge.textContent = 'IDLE';
-                badge.className = 'text-[10px] bg-gray-800 text-gray-400 border border-gray-700 px-2 py-0.5 rounded font-bold';
-            }
+            if (state === 'loading') { badge.textContent = '⏳ SYNCING...'; badge.className = 'text-[10px] bg-amber-900/40 text-amber-300 border border-amber-500/30 px-2 py-0.5 rounded font-bold'; }
+            else if (state === 'live') { badge.textContent = '✅ LIVE'; badge.className = 'text-[10px] bg-emerald-900/40 text-emerald-300 border border-emerald-500/30 px-2 py-0.5 rounded font-bold'; }
+            else if (state === 'cached') { badge.textContent = '💾 CACHED'; badge.className = 'text-[10px] bg-sky-900/40 text-sky-300 border border-sky-500/30 px-2 py-0.5 rounded font-bold'; }
+            else if (state === 'error') { badge.textContent = '⚠️ OFFLINE'; badge.className = 'text-[10px] bg-rose-900/40 text-rose-300 border border-rose-500/30 px-2 py-0.5 rounded font-bold'; }
+            else { badge.textContent = 'IDLE'; badge.className = 'text-[10px] bg-gray-800 text-gray-400 border border-gray-700 px-2 py-0.5 rounded font-bold'; }
 
-            if (lastSyncTimestamp && timeEl) {
-                timeEl.textContent = `Last synced: ${lastSyncTimestamp.toLocaleTimeString('en-PH', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}`;
-            }
+            if (lastSyncTimestamp && timeEl) timeEl.textContent = `Last synced: ${lastSyncTimestamp.toLocaleTimeString('en-PH', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}`;
         }
 
-        // ═══════════════════════════════════════════════════════════════
-        // OFFLINE
-        // ═══════════════════════════════════════════════════════════════
         function updateOnlineStatus() {
             const banner = document.getElementById('offlineBanner');
             banner.classList.toggle('show', !navigator.onLine);
@@ -468,22 +449,29 @@
         window.addEventListener('online', () => { updateOnlineStatus(); syncAndRender(false); });
         window.addEventListener('offline', updateOnlineStatus);
 
-        // ═══════════════════════════════════════════════════════════════
-        // DRAFT
-        // ═══════════════════════════════════════════════════════════════
         function saveDraft() {
             try {
                 const draft = {
                     territory: document.getElementById('territorySelect').value,
                     marketer: document.getElementById('marketerSelect').value,
                     coveredArea: document.getElementById('coveredAreaInput').value,
-                    invoiced: document.getElementById('totalSalesInvoiced').value,
+                    cashSales: document.getElementById('cashSales').value,
+                    cashPayments: document.getElementById('cashPayments').value,
+                    datedCheck: document.getElementById('datedCheck').value,
+                    pdc: document.getElementById('pdc').value,
+                    credit: document.getElementById('credit').value,
+                    consignment: document.getElementById('consignment').value,
                     remitted: document.getElementById('totalRemitted').value,
                     endingCash: document.getElementById('endingCashOnHand').value,
                     replenishmentAmount: document.getElementById('replenishmentAmount').value,
                     replenishmentPurpose: document.getElementById('replenishmentPurpose').value,
                     newStoresCount: document.getElementById('newStoresCount').value,
                     newStoreMaps: document.getElementById('newStoreMaps').value,
+                    packsDisposed: document.getElementById('packsDisposed').value,
+                    capital: document.getElementById('capital').value,
+                    productSales: document.getElementById('productSales').value,
+                    inventoryEnd: document.getElementById('inventoryEnd').value,
+                    disposalNotes: document.getElementById('disposalNotes').value,
                     savedAt: new Date().toISOString()
                 };
                 localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
@@ -502,13 +490,24 @@
                 populateMarketers();
                 document.getElementById('marketerSelect').value = draft.marketer || '';
                 document.getElementById('coveredAreaInput').value = draft.coveredArea || '';
-                document.getElementById('totalSalesInvoiced').value = draft.invoiced || '';
+                
+                document.getElementById('cashSales').value = draft.cashSales || '';
+                document.getElementById('cashPayments').value = draft.cashPayments || '';
+                document.getElementById('datedCheck').value = draft.datedCheck || '';
+                document.getElementById('pdc').value = draft.pdc || '';
+                document.getElementById('credit').value = draft.credit || '';
+                document.getElementById('consignment').value = draft.consignment || '';
                 document.getElementById('totalRemitted').value = draft.remitted || '';
                 document.getElementById('endingCashOnHand').value = draft.endingCash || '';
                 document.getElementById('replenishmentAmount').value = draft.replenishmentAmount || '';
                 document.getElementById('replenishmentPurpose').value = draft.replenishmentPurpose || '';
                 document.getElementById('newStoresCount').value = draft.newStoresCount || '0';
                 document.getElementById('newStoreMaps').value = draft.newStoreMaps || '';
+                document.getElementById('packsDisposed').value = draft.packsDisposed || '0';
+                document.getElementById('capital').value = draft.capital || '';
+                document.getElementById('productSales').value = draft.productSales || '';
+                document.getElementById('inventoryEnd').value = draft.inventoryEnd || '0';
+                document.getElementById('disposalNotes').value = draft.disposalNotes || '';
 
                 calculateFinancialReconciliation();
                 showToast(`📝 Draft restored`, 'info', 4000);
@@ -527,15 +526,9 @@
             }
         }
 
-        // ═══════════════════════════════════════════════════════════════
-        // CACHE
-        // ═══════════════════════════════════════════════════════════════
         function cacheReports() {
             try {
-                localStorage.setItem(REPORTS_CACHE_KEY, JSON.stringify({
-                    reports: submittedReports,
-                    cachedAt: new Date().toISOString()
-                }));
+                localStorage.setItem(REPORTS_CACHE_KEY, JSON.stringify({ reports: submittedReports, cachedAt: new Date().toISOString() }));
             } catch (e) { console.warn('Cache failed:', e); }
         }
 
@@ -553,9 +546,6 @@
             return false;
         }
 
-        // ═══════════════════════════════════════════════════════════════
-        // FETCH FROM SHEET
-        // ═══════════════════════════════════════════════════════════════
         async function fetchReportsFromSheet() {
             if (isFetching) return false;
             if (!navigator.onLine) return false;
@@ -586,9 +576,6 @@
             }
         }
 
-        // ═══════════════════════════════════════════════════════════════
-        // SYNC + RENDER
-        // ═══════════════════════════════════════════════════════════════
         async function syncAndRender(showFeedback = false) {
             const loading = document.getElementById('rosterLoading');
             if (loading) loading.classList.remove('hidden');
@@ -604,9 +591,6 @@
             }
         }
 
-        // ═══════════════════════════════════════════════════════════════
-        // VIEW SWITCH
-        // ═══════════════════════════════════════════════════════════════
         function switchView(view) {
             const formView = document.getElementById('submissionFormView');
             const dashView = document.getElementById('dashboardView');
@@ -627,9 +611,6 @@
             }
         }
 
-        // ═══════════════════════════════════════════════════════════════
-        // CADENCE
-        // ═══════════════════════════════════════════════════════════════
         function setCadence(cadence) {
             currentCadence = cadence;
             ['daily', 'weekly', 'monthly', 'quarterly', 'annual'].forEach(c => {
@@ -645,43 +626,35 @@
             let start, label, meta;
 
             switch (cadence) {
-                case 'daily': {
+                case 'daily':
                     start = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
                     label = now.toLocaleDateString('en-PH', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
                     meta = 'Current operating day (00:00 – 23:59)';
                     break;
-                }
-                case 'weekly': {
-                    start = new Date(endOfToday);
-                    start.setDate(start.getDate() - 6);
-                    start.setHours(0, 0, 0, 0);
+                case 'weekly':
+                    start = new Date(endOfToday); start.setDate(start.getDate() - 6); start.setHours(0, 0, 0, 0);
                     label = `${start.toLocaleDateString('en-PH', { month: 'short', day: 'numeric' })} – ${now.toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' })}`;
                     meta = 'Rolling 7-day window';
                     break;
-                }
-                case 'monthly': {
+                case 'monthly':
                     start = new Date(now.getFullYear(), now.getMonth(), 1);
                     label = now.toLocaleDateString('en-PH', { month: 'long', year: 'numeric' });
                     meta = 'Calendar month-to-date';
                     break;
-                }
-                case 'quarterly': {
+                case 'quarterly':
                     const q = Math.floor(now.getMonth() / 3);
                     start = new Date(now.getFullYear(), q * 3, 1);
                     label = `Q${q + 1} ${now.getFullYear()} (${['Jan–Mar', 'Apr–Jun', 'Jul–Sep', 'Oct–Dec'][q]})`;
                     meta = 'Current fiscal quarter-to-date';
                     break;
-                }
-                case 'annual': {
+                case 'annual':
                     start = new Date(now.getFullYear(), 0, 1);
                     label = `Year ${now.getFullYear()}`;
                     meta = 'Calendar year-to-date';
                     break;
-                }
-                default: {
+                default:
                     start = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
                     label = '—'; meta = '—';
-                }
             }
             return { start, end: endOfToday, label, meta };
         }
@@ -693,7 +666,6 @@
 
         function computeCadenceStats(marketer, cadence) {
             const { start, end } = getDateRange(cadence);
-
             const reports = submittedReports.filter(r => {
                 if (r.marketer !== marketer) return false;
                 if (!r.timestamp) return false;
@@ -704,7 +676,7 @@
             const distinctDateKeys = new Set();
             reports.forEach(r => distinctDateKeys.add(localDateKey(r.timestamp)));
 
-            let invoiced = 0, remitted = 0, cashOnHand = 0, newStores = 0, replenishment = 0, attachmentTotal = 0;
+            let invoiced = 0, remitted = 0, cashOnHand = 0, newStores = 0, replenishment = 0, attachmentTotal = 0, packsDisposed = 0;
             reports.forEach(r => {
                 invoiced += r.invoiced || 0;
                 remitted += r.remitted || 0;
@@ -712,6 +684,7 @@
                 newStores += r.newStores || 0;
                 replenishment += r.replenishmentAmount || 0;
                 attachmentTotal += (r.attachmentCount != null) ? r.attachmentCount : ((r.attachments || []).length);
+                packsDisposed += r.packsDisposed || 0;
             });
 
             const totalDays = Math.max(1, Math.floor((end - start) / (1000 * 60 * 60 * 24)) + 1);
@@ -725,16 +698,9 @@
                 }
             }
 
-            return {
-                reports, submittedCount: reports.length, submittedDays, totalDays, daysMissed, missingDates,
-                invoiced, remitted, cashOnHand, newStores, replenishment,
-                attachments: attachmentTotal
-            };
+            return { reports, submittedCount: reports.length, submittedDays, totalDays, daysMissed, missingDates, invoiced, remitted, cashOnHand, newStores, replenishment, attachments: attachmentTotal, packsDisposed };
         }
 
-        // ═══════════════════════════════════════════════════════════════
-        // DROPDOWNS
-        // ═══════════════════════════════════════════════════════════════
         function populateMarketers() {
             const territory = document.getElementById('territorySelect').value;
             const marketerSelect = document.getElementById('marketerSelect');
@@ -761,11 +727,17 @@
             }
         }
 
-        // ═══════════════════════════════════════════════════════════════
-        // FINANCIAL
-        // ═══════════════════════════════════════════════════════════════
         function calculateFinancialReconciliation() {
-            const invoiced = parseFloat(document.getElementById('totalSalesInvoiced').value) || 0;
+            const cs = parseFloat(document.getElementById('cashSales').value) || 0;
+            const cp = parseFloat(document.getElementById('cashPayments').value) || 0;
+            const dc = parseFloat(document.getElementById('datedCheck').value) || 0;
+            const pdc = parseFloat(document.getElementById('pdc').value) || 0;
+            const cr = parseFloat(document.getElementById('credit').value) || 0;
+            const cons = parseFloat(document.getElementById('consignment').value) || 0;
+            
+            const invoiced = cs + cp + dc + pdc + cr + cons;
+            document.getElementById('totalSalesInvoiced').value = `₱${invoiced.toLocaleString('en-PH', { minimumFractionDigits: 2 })}`;
+
             const remitted = parseFloat(document.getElementById('totalRemitted').value) || 0;
             const endingCash = parseFloat(document.getElementById('endingCashOnHand').value) || 0;
 
@@ -787,9 +759,6 @@
             }
         }
 
-        // ═══════════════════════════════════════════════════════════════
-        // ATTACHMENTS
-        // ═══════════════════════════════════════════════════════════════
         function handleAttachmentSelect(event) {
             const files = event.target.files;
             const previewContainer = document.getElementById('attachmentPreviews');
@@ -813,9 +782,6 @@
             });
         }
 
-        // ═══════════════════════════════════════════════════════════════
-        // SUBMIT
-        // ═══════════════════════════════════════════════════════════════
         async function handleEODSubmit(e) {
             e.preventDefault();
 
@@ -824,19 +790,39 @@
             const progressFill = document.getElementById('progressFill');
             const uploadStatus = document.getElementById('uploadStatus');
 
+            const cs = parseFloat(document.getElementById('cashSales').value) || 0;
+            const cp = parseFloat(document.getElementById('cashPayments').value) || 0;
+            const dc = parseFloat(document.getElementById('datedCheck').value) || 0;
+            const pdc = parseFloat(document.getElementById('pdc').value) || 0;
+            const cr = parseFloat(document.getElementById('credit').value) || 0;
+            const cons = parseFloat(document.getElementById('consignment').value) || 0;
+            const invoiced = cs + cp + dc + pdc + cr + cons;
+
             const report = {
                 reportId: 'EOD-' + Date.now().toString().slice(-6),
                 timestamp: new Date().toISOString(),
                 territory: document.getElementById('territorySelect').value,
                 marketer: document.getElementById('marketerSelect').value,
                 coveredArea: document.getElementById('coveredAreaInput').value,
-                invoiced: parseFloat(document.getElementById('totalSalesInvoiced').value) || 0,
+                cashSales: cs,
+                cashPayments: cp,
+                datedCheck: dc,
+                pdc: pdc,
+                credit: cr,
+                consignment: cons,
+                invoiced: invoiced,
                 remitted: parseFloat(document.getElementById('totalRemitted').value) || 0,
                 cashOnHand: parseFloat(document.getElementById('endingCashOnHand').value) || 0,
+                variance: ((parseFloat(document.getElementById('totalRemitted').value) || 0) + (parseFloat(document.getElementById('endingCashOnHand').value) || 0)) - invoiced,
                 replenishmentAmount: parseFloat(document.getElementById('replenishmentAmount').value) || 0,
                 replenishmentPurpose: document.getElementById('replenishmentPurpose').value.trim(),
                 newStores: parseInt(document.getElementById('newStoresCount').value) || 0,
                 mapLinks: document.getElementById('newStoreMaps').value.trim(),
+                packsDisposed: parseInt(document.getElementById('packsDisposed').value) || 0,
+                capital: parseFloat(document.getElementById('capital').value) || 0,
+                productSales: parseFloat(document.getElementById('productSales').value) || 0,
+                inventoryEnd: parseInt(document.getElementById('inventoryEnd').value) || 0,
+                disposalNotes: document.getElementById('disposalNotes').value.trim(),
                 attachments: attachedFiles
             };
 
@@ -906,9 +892,6 @@
             }
         }
 
-        // ═══════════════════════════════════════════════════════════════
-        // RENDER DASHBOARD
-        // ═══════════════════════════════════════════════════════════════
         function renderDashboard() {
             const range = getDateRange(currentCadence);
 
@@ -948,10 +931,10 @@
                 <th class="p-3 text-center">Reports Submitted</th>
                 <th class="p-3 text-center">Days Missed</th>
                 ${currentCadence === 'monthly' ? '<th class="p-3 text-center">Missing Dates</th>' : ''}
-                <th class="p-3 text-right">Invoiced</th>
+                <th class="p-3 text-right">Income (Invoiced)</th>
                 <th class="p-3 text-right">Remitted</th>
                 <th class="p-3 text-right">Ending Cash</th>
-                <th class="p-3 text-center">New Stores</th>
+                <th class="p-3 text-center">Disposed</th>
                 <th class="p-3 text-center">Attachments</th>
             `;
             head.innerHTML = `<tr class="bg-brand-purple/60 text-brand-gold uppercase text-[11px] tracking-wider border-b border-brand-purple">${baseCols}</tr>`;
@@ -1004,7 +987,7 @@
                     <td class="p-3 text-right text-emerald-400 font-medium">₱${stats.invoiced.toLocaleString('en-PH', { minimumFractionDigits: 2 })}</td>
                     <td class="p-3 text-right text-sky-400 font-medium">₱${stats.remitted.toLocaleString('en-PH', { minimumFractionDigits: 2 })}</td>
                     <td class="p-3 text-right text-brand-gold font-medium">₱${stats.cashOnHand.toLocaleString('en-PH', { minimumFractionDigits: 2 })}</td>
-                    <td class="p-3 text-center text-white">${stats.newStores}</td>
+                    <td class="p-3 text-center text-white">${stats.packsDisposed}</td>
                     <td class="p-3 text-center text-xs text-gray-400">${stats.attachments} files</td>
                 `;
                 tbody.appendChild(row);
@@ -1014,9 +997,6 @@
                 `${Object.keys(territoryNetwork).length} Territories / ${allMarketers.length} Field Personnel · ${range.label}`;
         }
 
-        // ═══════════════════════════════════════════════════════════════
-        // INIT
-        // ═══════════════════════════════════════════════════════════════
         document.addEventListener('DOMContentLoaded', async () => {
             const now = new Date();
             document.getElementById('currentDateDisplay').textContent = now.toLocaleDateString('en-PH', {
