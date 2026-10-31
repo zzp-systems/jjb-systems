@@ -1,0 +1,549 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Form-NPD-001 · Recipe Submission for Costing, Approval & Ingredient Batching</title>
+<style>
+  :root{
+    --charcoal:#1a202c; --charcoal2:#2d3748;
+    --gold:#D4AF37; --gold-soft:#f0dfa0;
+    --teal:#004d40; --teal-soft:#e0f2f1;
+    --bg:#f4f6f8; --card:#ffffff; --line:#d9e0e6;
+    --ink:#1c2733; --muted:#5b6b7a;
+    --ok:#1b7a3e; --warn:#b3261e; --amber:#92600a;
+    --serif: "Playfair Display","Lora",Georgia,"Times New Roman",serif;
+    --sans: Roboto,"Segoe UI",system-ui,-apple-system,Arial,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:var(--sans);background:var(--bg);color:var(--ink);font-size:14px;line-height:1.5}
+  .page{max-width:960px;margin:0 auto;padding:0 16px 60px}
+
+  /* Header */
+  .masthead{background:linear-gradient(135deg,var(--charcoal),var(--charcoal2));color:#fff;padding:26px 28px 22px;border-bottom:4px solid var(--gold)}
+  .masthead .inner{max-width:960px;margin:0 auto;padding:0 16px}
+  .brand-row{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+  .logo{width:46px;height:46px;border:2px solid var(--gold);border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:var(--serif);font-weight:700;color:var(--gold);letter-spacing:.5px;font-size:15px;flex:0 0 auto}
+  .brand h1{font-family:var(--serif);font-size:24px;line-height:1.2;color:#fff}
+  .brand .sub{color:#cbd5e0;font-size:12.5px;margin-top:3px;letter-spacing:.4px}
+  .sla-badge{margin-left:auto;background:rgba(212,175,55,.14);border:1px solid var(--gold);color:var(--gold-soft);font-size:11.5px;padding:6px 12px;border-radius:999px;letter-spacing:.4px;white-space:nowrap}
+  .doc-meta{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px 22px;margin-top:16px;padding-top:14px;border-top:1px solid rgba(255,255,255,.18);font-size:12px;color:#e2e8f0}
+  .doc-meta b{color:var(--gold-soft);font-weight:600;display:block;font-size:10.5px;text-transform:uppercase;letter-spacing:.8px;margin-bottom:1px}
+
+  /* Toolbar */
+  .toolbar{display:flex;gap:10px;justify-content:flex-end;padding:14px 0;flex-wrap:wrap}
+  .btn{font-family:var(--sans);font-size:13px;font-weight:600;border:0;border-radius:6px;padding:9px 18px;cursor:pointer;letter-spacing:.3px}
+  .btn-print{background:var(--teal);color:#fff}
+  .btn-reset{background:#e5e9ee;color:#3a4756}
+  .btn:hover{filter:brightness(1.06)}
+
+  /* Sections */
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:20px 22px;margin-bottom:18px;page-break-inside:avoid;box-shadow:0 1px 2px rgba(16,24,40,.04)}
+  .sec-head{display:flex;align-items:baseline;gap:12px;border-bottom:2px solid var(--teal);padding-bottom:8px;margin-bottom:16px}
+  .sec-num{font-family:var(--serif);font-size:20px;font-weight:700;color:var(--gold);white-space:nowrap}
+  .sec-title{font-family:var(--serif);font-size:17px;font-weight:700;color:var(--teal)}
+  .sec-note{margin-left:auto;font-size:11px;color:var(--muted);font-style:italic;text-align:right}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(215px,1fr));gap:12px 16px}
+  .field{display:flex;flex-direction:column;gap:4px}
+  .field.full{grid-column:1/-1}
+  label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--teal)}
+  label .req{color:var(--warn)}
+  input[type=text],input[type=number],input[type=date],select,textarea{
+    font-family:var(--sans);font-size:13.5px;padding:8px 10px;border:1px solid #b8c4cf;border-radius:6px;background:#fff;color:var(--ink);width:100%}
+  input:focus,select:focus,textarea:focus{outline:2px solid rgba(0,77,64,.35);border-color:var(--teal)}
+  textarea{resize:vertical;min-height:64px}
+  .hint{font-size:11px;color:var(--muted)}
+
+  /* Formula table */
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  thead th{background:var(--teal);color:#fff;text-align:left;padding:8px 8px;font-size:11px;text-transform:uppercase;letter-spacing:.6px;font-weight:600}
+  thead th:first-child{border-radius:6px 0 0 0} thead th:last-child{border-radius:0 6px 0 0}
+  tbody td{border-bottom:1px solid var(--line);padding:6px 8px;vertical-align:middle}
+  tbody tr:nth-child(even){background:#f6f9f8}
+  td input,td select{padding:6px 7px;font-size:13px}
+  td .grams,td .linecost{font-weight:600;color:var(--teal)}
+  .del-btn{background:none;border:1px solid #d3b3b0;color:var(--warn);border-radius:5px;width:26px;height:26px;cursor:pointer;font-size:14px;line-height:1}
+  .del-btn[disabled]{opacity:.25;cursor:not-allowed}
+  .add-btn{margin-top:10px;background:var(--teal);color:#fff;border:0;border-radius:6px;padding:7px 16px;font-size:12.5px;font-weight:600;cursor:pointer}
+  .formula-foot{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin-top:14px}
+  .kpi{background:var(--teal-soft);border:1px solid #b2d8d3;border-radius:8px;padding:10px 12px}
+  .kpi .k{font-size:10.5px;text-transform:uppercase;letter-spacing:.7px;color:var(--teal);font-weight:700}
+  .kpi .v{font-family:var(--serif);font-size:18px;font-weight:700;color:var(--charcoal);margin-top:2px}
+  .warn-txt{color:var(--warn);font-size:11.5px;font-weight:600}
+  .ok-txt{color:var(--ok);font-size:11.5px;font-weight:600}
+
+  /* Checklists */
+  .checks{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:8px 18px}
+  .check{display:flex;gap:9px;align-items:flex-start;background:#f8f9fa;border:1px solid var(--line);border-radius:7px;padding:9px 11px;font-size:12.5px}
+  .check input{margin-top:2px;accent-color:var(--teal);width:15px;height:15px;flex:0 0 auto}
+
+  /* Pipeline */
+  .pipeline{display:flex;gap:0;flex-wrap:wrap;margin-bottom:18px}
+  .stage{flex:1 1 150px;min-width:140px;text-align:center;padding:10px 8px;background:#eceff3;border:1px solid var(--line);position:relative}
+  .stage:first-child{border-radius:8px 0 0 8px}
+  .stage:last-child{border-radius:0 8px 8px 0}
+  .stage .n{font-family:var(--serif);font-size:16px;font-weight:700;color:var(--gold)}
+  .stage .t{font-size:11.5px;font-weight:700;color:var(--charcoal)}
+  .stage .d{font-size:10.5px;color:var(--muted)}
+  .stage.hot{background:var(--teal);border-color:var(--teal)}
+  .stage.hot .t,.stage.hot .n{color:#fff} .stage.hot .d{color:#cfe8e4}
+  .sign-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:14px}
+  .sign{border:1px solid var(--line);border-radius:9px;padding:13px 14px;background:#fbfcfd}
+  .sign .who{font-family:var(--serif);font-weight:700;font-size:14px;color:var(--charcoal)}
+  .sign .role{font-size:11px;color:var(--teal);font-weight:600;text-transform:uppercase;letter-spacing:.5px;margin:2px 0 8px}
+  .sign .scope{font-size:11.5px;color:var(--muted);margin-bottom:8px}
+  .sigline{margin-top:10px;border-top:1.5px solid var(--charcoal2);padding-top:3px;font-size:10.5px;color:var(--muted);display:flex;justify-content:space-between}
+
+  .banner{background:var(--teal-soft);border-left:4px solid var(--teal);border-radius:0 8px 8px 0;padding:12px 16px;font-size:12.5px;color:var(--teal);margin-bottom:18px}
+  .banner b{font-weight:700}
+  .footer-note{font-size:11px;color:var(--muted);text-align:center;margin-top:8px;line-height:1.6}
+  .ref-banner{display:flex;align-items:center;gap:12px;background:#fff8e6;border:1px dashed var(--gold);border-radius:8px;padding:10px 14px;margin-bottom:18px;font-size:13px}
+  .ref-banner .ref{font-family:var(--serif);font-weight:700;font-size:16px;color:var(--teal)}
+
+  @media print{
+    body{background:#fff;font-size:11.5px}
+    .toolbar,.add-btn,.del-btn{display:none !important}
+    .card{box-shadow:none;page-break-inside:avoid;margin-bottom:10px}
+    .masthead{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    @page{size:letter portrait;margin:12mm}
+    input,select,textarea{border:1px solid #999 !important;background:#fff !important}
+    tbody tr:nth-child(even){background:#fff}
+    thead th{-webkit-print-color-adjust:exact}
+  }
+</style>
+</head>
+<body>
+
+<header class="masthead">
+  <div class="inner">
+    <div class="brand-row">
+      <div class="logo">JJB</div>
+      <div class="brand">
+        <h1>Recipe Submission for Costing, Approval &amp; Ingredient Batching</h1>
+        <div class="sub">Jang-Jang Bakeshop · Kingdom Confectionary Business Lines · Bawat Piraso, Dekalidad</div>
+      </div>
+      <div class="sla-badge">⏱ 5-Business-Day Review SLA · Stage 2: 72 hrs · Stage 3: 48 hrs</div>
+    </div>
+    <div class="doc-meta">
+      <div><b>Form Number</b>Form-NPD-001 · Rev. 01</div>
+      <div><b>Governing SOP</b>SOP-WAR-002 / SOP-PRO-004 · Rev. 04</div>
+      <div><b>Effective Date</b>24 October 2026</div>
+      <div><b>Classification</b>Internal – Controlled Document</div>
+      <div><b>Executive Authority</b>Angelina P. Sun · Head of Administration</div>
+      <div><b>QA / FSCO Authority</b>Grace P. Suico · FSCO &amp; QA Control Director</div>
+    </div>
+  </div>
+</header>
+
+<div class="page">
+
+  <div class="toolbar">
+    <button class="btn btn-reset" type="button" onclick="resetForm()">Clear Form</button>
+    <button class="btn btn-print" type="button" onclick="window.print()">🖨 Print / Save PDF</button>
+  </div>
+
+  <div class="banner">
+    <b>CORE POLICY DIRECTIVE:</b> "No Official Batching Without Prior Administrative Formulation Approval &amp; Costing."
+    No ingredient will be scaled, sieved, or issued unless matched to an active code in the Official Master Formulation Register.
+    Floor testing before this submission is prohibited. Completed forms are reviewed through the 5-day NPD SLA pipeline below.
+  </div>
+
+  <div class="ref-banner">
+    <span>Submission Reference No.:</span>
+    <span class="ref" id="refNo">—</span>
+    <span class="hint" style="margin-left:auto">Auto-generated at print. Enter manually if pre-assigned by the Admin Office.</span>
+  </div>
+
+  <!-- ============ SECTION A ============ -->
+  <div class="card">
+    <div class="sec-head">
+      <span class="sec-num">A</span><span class="sec-title">Submitter &amp; Product Identity</span>
+      <span class="sec-note">Completed by the submitting baker</span>
+    </div>
+    <div class="grid">
+      <div class="field"><label>Date of Submission <span class="req">*</span></label><input type="date" id="subDate" /></div>
+      <div class="field"><label>Submitting Baker <span class="req">*</span></label><input type="text" id="bakerName" placeholder="Full name" /></div>
+      <div class="field"><label>Position / Station Title</label><input type="text" id="bakerPos" placeholder="e.g., Head Baker – Otap Line" /></div>
+      <div class="field"><label>Facility / Outlet <span class="req">*</span></label>
+        <select id="outlet">
+          <option value="">— Select —</option>
+          <option>Indangan Central Manufacturing Plant</option>
+          <option>Sasa Facility</option>
+          <option>Laurice Delicacies – Bankerohan D.C.</option>
+          <option>Pan de Verde – Communal D.C.</option>
+          <option>Satellite Outlet (specify in remarks)</option>
+        </select>
+      </div>
+      <div class="field"><label>Submission Type <span class="req">*</span></label>
+        <select id="subType">
+          <option value="">— Select —</option>
+          <option>New original recipe</option>
+          <option>Modification of existing registered SKU</option>
+          <option>Seasonal / limited-run variant</option>
+        </select>
+      </div>
+      <div class="field"><label>Base SKU (if modification)</label><input type="text" id="baseSku" placeholder="e.g., BIS-001 / OTP-001 / BRD-COMM-001" /></div>
+      <div class="field"><label>Proposed Commercial / Item Name <span class="req">*</span></label><input type="text" id="prodName" placeholder="e.g., Ube Cheese Pandesal" /></div>
+      <div class="field"><label>Product Category</label>
+        <select id="category">
+          <option value="">— Select —</option>
+          <option>Bread / Bun (moist crumb line)</option>
+          <option>Pasalubong / Dry delicacy (Biscocho-Otap class)</option>
+          <option>Pastry / Laminated</option>
+          <option>Cake / High-moisture</option>
+          <option>Candy / Confection</option>
+          <option>Beverage</option>
+        </select>
+      </div>
+      <div class="field"><label>Target Outlet / Distribution</label>
+        <select id="targetOutlet">
+          <option value="">— Select —</option>
+          <option>Indangan Plant + all outlets</option>
+          <option>Laurice Delicacies – Bankerohan</option>
+          <option>Pan de Verde – Communal</option>
+          <option>Wholesale / Enterprise accounts</option>
+        </select>
+      </div>
+      <div class="field"><label>Target Shelf Life</label><input type="text" id="shelfLife" placeholder="e.g., 5 days ambient / 3 months sealed" /></div>
+      <div class="field"><label>Target Batch Size (flour basis, g) <span class="req">*</span></label><input type="number" id="flourBasis" value="10000" min="100" step="100" oninput="recalc()" /></div>
+      <div class="field"><label>Finished Unit Weight (g/piece)</label><input type="number" id="unitWeight" value="55" min="1" step="0.5" oninput="recalc()" /></div>
+      <div class="field full"><label>Commercial Justification <span class="req">*</span></label>
+        <textarea id="justification" placeholder="Why this product: customer demand, margin opportunity, seasonal window, outlet feedback, competitor gap…"></textarea></div>
+    </div>
+  </div>
+
+  <!-- ============ SECTION B ============ -->
+  <div class="card">
+    <div class="sec-head">
+      <span class="sec-num">B</span><span class="sec-title">Master Formula — Baker's Percentages (Flour Basis = 100.0%)</span>
+      <span class="sec-note">Baker completes columns 1–3; Finance completes ₱/kg at Stage 3</span>
+    </div>
+    <table id="formulaTable">
+      <thead>
+        <tr>
+          <th style="width:26px">#</th>
+          <th>Ingredient / Raw Material</th>
+          <th style="width:95px">Baker's %</th>
+          <th style="width:95px">Grams (auto)</th>
+          <th style="width:95px">₱ / kg</th>
+          <th style="width:95px">Line Cost (auto)</th>
+          <th style="width:36px"></th>
+        </tr>
+      </thead>
+      <tbody id="formulaBody"></tbody>
+    </table>
+    <button class="add-btn" type="button" onclick="addRow()">＋ Add Ingredient Row</button>
+    <div class="formula-foot">
+      <div class="kpi"><div class="k">Total Formula %</div><div class="v" id="kTotalPct">—</div></div>
+      <div class="kpi"><div class="k">Hydration (water %)</div><div class="v" id="kHydration">—</div></div>
+      <div class="kpi"><div class="k">Total Dough Weight</div><div class="v" id="kDough">—</div></div>
+      <div class="kpi"><div class="k">Theoretical Yield (pieces)</div><div class="v" id="kYield">—</div></div>
+      <div class="kpi"><div class="k">Total Ingredient Cost / Batch</div><div class="v" id="kIngrCost">—</div></div>
+    </div>
+    <p class="hint" style="margin-top:10px">Formula integrity rule: flour is fixed at 100.0%. Hydration shifts, sweetness adjustments, or fat substitutions may only be enacted through this form — never on the floor (see Procedure B, SOP-WAR-002).</p>
+  </div>
+
+  <!-- ============ SECTION C ============ -->
+  <div class="card">
+    <div class="sec-head">
+      <span class="sec-num">C</span><span class="sec-title">Process &amp; Thermal Parameters</span>
+      <span class="sec-note">Validated at Stage 2 by Master Head Baker &amp; Equipment Manager</span>
+    </div>
+    <div class="grid">
+      <div class="field"><label>Mixing Method / Cycle</label><input type="text" id="mixMethod" placeholder="e.g., Spiral, 2 min low + 6 min high" /></div>
+      <div class="field"><label>Target Dough Exit Temp (26–28 °C)</label><input type="number" id="doughTemp" value="27" step="0.1" oninput="recalc()" /></div>
+      <div class="field"><label>Proofing Dwell (min)</label><input type="number" id="proofTime" placeholder="e.g., 60" /></div>
+      <div class="field"><label>Oven Type</label>
+        <select id="ovenType">
+          <option>Deck (radiant)</option><option>Rotary rack (convection)</option><option>Rack</option>
+        </select></div>
+      <div class="field"><label>Bake Temperature (°C)</label><input type="number" id="bakeTemp" placeholder="e.g., 176.7" /></div>
+      <div class="field"><label>Bake Time (min)</label><input type="number" id="bakeTime" placeholder="e.g., 18" /></div>
+      <div class="field"><label>CCP-1 Target Core Temp (must be &gt; 95 °C)</label><input type="number" id="ccpTemp" value="96" step="0.1" oninput="recalc()" /></div>
+      <div class="field"><label>Water Activity Target (dry lines: a<sub>w</sub> &lt; 0.60)</label><input type="number" id="aw" value="0.55" step="0.01" oninput="recalc()" /></div>
+    </div>
+    <div id="paramWarnings" style="margin-top:12px"></div>
+  </div>
+
+  <!-- ============ SECTION D ============ -->
+  <div class="card">
+    <div class="sec-head">
+      <span class="sec-num">D</span><span class="sec-title">Food Safety, Allergen &amp; Regulatory Declaration</span>
+      <span class="sec-note">Audited by FSCO &amp; QA Control Director</span>
+    </div>
+    <div class="field" style="margin-bottom:12px"><label>Allergens Present in Formulation</label>
+      <div class="checks" id="allergens">
+        <label class="check"><input type="checkbox" checked> Wheat / Gluten</label>
+        <label class="check"><input type="checkbox"> Egg</label>
+        <label class="check"><input type="checkbox"> Milk / Dairy</label>
+        <label class="check"><input type="checkbox"> Soy</label>
+        <label class="check"><input type="checkbox"> Peanut</label>
+        <label class="check"><input type="checkbox"> Tree Nuts</label>
+        <label class="check"><input type="checkbox"> Sesame</label>
+        <label class="check"><input type="checkbox"> Coconut</label>
+      </div>
+    </div>
+    <div class="grid">
+      <div class="field"><label>Proposed Primary Packaging</label><input type="text" id="packaging" placeholder="e.g., Parchment + LDPE pouch, food-grade (CoA on file)" /></div>
+      <div class="field"><label>Regulatory / CPR Status <span class="req">*</span></label>
+        <select id="cprStatus">
+          <option value="">— Select —</option>
+          <option>Within existing CPR scope (Biscocho/Otap class)</option>
+          <option>Requires new CPR application or variation (AO 2014-0030)</option>
+          <option>Requires FSCO confirmation before any commercial sale</option>
+        </select></div>
+      <div class="field full"><label>Food Safety Notes for QA Review</label>
+        <textarea id="qaNotes" placeholder="Mold hurdles, preservatives (if any), moisture control, cross-contact risks vs. existing lines, segregation needs…"></textarea></div>
+    </div>
+    <div class="checks" style="margin-top:12px">
+      <label class="check"><input type="checkbox" id="decl1"> I understand trial bakes require a Sample Batch Request countersigned by the Master Head Baker and must be taped "R&amp;D / TRIAL BATCH ONLY", isolated from commercial lines, and never sold or displayed.</label>
+      <label class="check"><input type="checkbox" id="decl2"> I declare the formula above is complete and truthful. No undocumented ingredient, additive, or substitution is included.</label>
+      <label class="check"><input type="checkbox" id="decl3"> I understand concealment of process drift, scaling discrepancy, or formula defect triggers progressive disciplinary action (SOP-HR-ORI-002).</label>
+    </div>
+  </div>
+
+  <!-- ============ SECTION E ============ -->
+  <div class="card">
+    <div class="sec-head">
+      <span class="sec-num">E</span><span class="sec-title">Costing &amp; Commercial Feasibility Worksheet</span>
+      <span class="sec-note">Stage 3 · Finance (48-hour SLA) — Sauping &amp; Basoc</span>
+    </div>
+    <div class="grid">
+      <div class="field"><label>Packaging Cost per Batch (₱)</label><input type="number" id="packCost" value="0" min="0" step="0.01" oninput="recalc()" /></div>
+      <div class="field"><label>Utility &amp; Labor Overhead per Batch (₱)</label><input type="number" id="utilCost" value="0" min="0" step="0.01" oninput="recalc()" /></div>
+      <div class="field"><label>Scrap Allowance % (cap &lt; 2.0%)</label><input type="number" id="scrapPct" value="2" min="0" step="0.1" oninput="recalc()" /></div>
+      <div class="field"><label>Target Wholesale Margin %</label><input type="number" id="whMargin" value="30" min="0" max="90" step="1" oninput="recalc()" /></div>
+      <div class="field"><label>Target Retail Margin %</label><input type="number" id="retMargin" value="25" min="0" max="90" step="1" oninput="recalc()" /></div>
+    </div>
+    <div class="formula-foot" style="margin-top:16px">
+      <div class="kpi"><div class="k">Ingredient Cost / Batch</div><div class="v" id="cIngr">—</div></div>
+      <div class="kpi"><div class="k">Total Batch Cost (incl. scrap)</div><div class="v" id="cBatch">—</div></div>
+      <div class="kpi"><div class="k">Cost per Piece</div><div class="v" id="cUnit">—</div></div>
+      <div class="kpi"><div class="k">Wholesale Transfer Cost</div><div class="v" id="cWholesale">—</div></div>
+      <div class="kpi"><div class="k">Recommended SRP</div><div class="v" id="cSrp">—</div></div>
+    </div>
+    <div id="costWarnings" style="margin-top:12px"></div>
+  </div>
+
+  <!-- ============ SECTION F ============ -->
+  <div class="card">
+    <div class="sec-head">
+      <span class="sec-num">F</span><span class="sec-title">Review &amp; Approval Pipeline — 5-Day SLA</span>
+      <span class="sec-note">Escalates automatically to Head of Administration if SLA lapses</span>
+    </div>
+    <div class="pipeline">
+      <div class="stage hot"><div class="n">1</div><div class="t">Submitted</div><div class="d">Day 0 · Logged</div></div>
+      <div class="stage"><div class="n">2</div><div class="t">Technical Review</div><div class="d">≤ 72 hrs · Hermogeno · Capada · Suico</div></div>
+      <div class="stage"><div class="n">3</div><div class="t">Costing Review</div><div class="d">≤ 48 hrs · Sauping · Basoc</div></div>
+      <div class="stage"><div class="n">4</div><div class="t">Executive Sign-Off</div><div class="d">A. P. Sun · SKU Assignment</div></div>
+      <div class="stage"><div class="n">5</div><div class="t">Register Activation</div><div class="d">R. Malusay · Batching Unlocked</div></div>
+    </div>
+
+    <div class="sign-grid">
+      <div class="sign">
+        <div class="who">Alwen Hermogeno</div><div class="role">Master Head Baker — Rheology Clearance</div>
+        <div class="scope">Windowpane/hydration, mixing shear, fermentation &amp; proofing curves, dough exit 26–28 °C.</div>
+        <select><option>Pending</option><option>Approved</option><option>Returned for Revision</option><option>Rejected</option></select>
+        <input type="text" placeholder="Technical remarks" style="margin-top:8px" />
+        <div class="sigline"><span>Signature over printed name</span><span>Date: ________</span></div>
+      </div>
+      <div class="sign">
+        <div class="who">Ramil Capada</div><div class="role">Building &amp; Equipment Manager — Facility &amp; Thermal Clearance</div>
+        <div class="scope">Mixer/line feasibility, deck vs. rotary profile, CCP-1 lethality &gt; 95 °C across rack positions.</div>
+        <select><option>Pending</option><option>Approved</option><option>Returned for Revision</option><option>Rejected</option></select>
+        <input type="text" placeholder="Engineering remarks" style="margin-top:8px" />
+        <div class="sigline"><span>Signature over printed name</span><span>Date: ________</span></div>
+      </div>
+      <div class="sign">
+        <div class="who">Grace P. Suico</div><div class="role">FSCO &amp; QA Control Director — Food Safety / cGMP Clearance</div>
+        <div class="scope">Allergen segregation, a<sub>w</sub> &lt; 0.60 dry lines, mold hurdles, CPR/label compliance, quarantine authority.</div>
+        <select><option>Pending</option><option>Approved</option><option>Returned for Revision</option><option>Rejected</option></select>
+        <input type="text" placeholder="QA / cGMP remarks" style="margin-top:8px" />
+        <div class="sigline"><span>Signature over printed name</span><span>Date: ________</span></div>
+      </div>
+      <div class="sign">
+        <div class="who">Jeanifer S. Sauping &amp; Maria Charito Basoc</div><div class="role">Finance Directors — Costing &amp; Commercial Viability</div>
+        <div class="scope">Gram-to-peso cost mapping from warehouse logs, scrap &lt; 2.0%, COGS, wholesale &amp; SRP model.</div>
+        <select><option>Pending</option><option>Approved</option><option>Returned for Revision</option><option>Rejected</option></select>
+        <input type="text" placeholder="Costing remarks" style="margin-top:8px" />
+        <div class="sigline"><span>Signatures</span><span>Date: ________</span></div>
+      </div>
+      <div class="sign" style="border:1.5px solid var(--gold)">
+        <div class="who">Angelina P. Sun</div><div class="role">Head of Administration — Final Commercial Authorization</div>
+        <div class="scope">Executive review of consolidated dossier. Assigns Official System SKU and unlocks requisitioning on Form-PRO-001.</div>
+        <input type="text" id="skuAssign" placeholder="Assigned System SKU (e.g., BRD-COMM-002)" style="margin-bottom:8px" />
+        <select><option>Pending</option><option>Approved for Commercial Production</option><option>Approved for Trial Only</option><option>Rejected</option></select>
+        <input type="text" placeholder="Executive disposition" style="margin-top:8px" />
+        <div class="sigline"><span>Signature</span><span>Date: ________</span></div>
+      </div>
+      <div class="sign">
+        <div class="who">Romeo B. Malusay</div><div class="role">Ingredient Batching Preparer — Master Register Activation</div>
+        <div class="scope">Master formulation card integrated into active register; Form-PRO-001 requisitioning unlocked; effective date below.</div>
+        <input type="date" id="regDate" />
+        <div class="sigline" style="margin-top:12px"><span>Signature</span><span>Register Ref: ________</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer-note">
+    Form-NPD-001 · Rev. 01 · Governing documents: SOP-WAR-002 / SOP-PRO-004 Rev. 04 and Manual of Operations JJB-MAN-001 Rev. 4.0 (FDA LTO 3000013388488 · Indangan).<br>
+    Prepared under the Systems &amp; Operations Directorate · Unauthorized reproduction outside the Jang-Jang Bakeshop network is prohibited.
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+  var flourBasis, unitWeight;
+
+  function defaultRows(){
+    return [
+      {name:"Bread flour / fortified flour", pct:100, locked:true},
+      {name:"Water (tap / ice-adjusted)", pct:60},
+      {name:"Yeast (instant)", pct:1.5},
+      {name:"Iodized salt", pct:1.8},
+      {name:"Sugar", pct:8},
+      {name:"Shortening / butter", pct:10}
+    ];
+  }
+
+  function fmt(n, d){
+    if(!isFinite(n)) return "—";
+    return n.toLocaleString("en-PH",{minimumFractionDigits:d===undefined?2:d,maximumFractionDigits:d===undefined?2:d});
+  }
+  function peso(n){ return "₱" + fmt(n); }
+
+  function addRow(name, pct, locked){
+    var tb = document.getElementById("formulaBody");
+    var tr = document.createElement("tr");
+    var idx = tb.rows.length + 1;
+    tr.innerHTML =
+      '<td>'+idx+'</td>' +
+      '<td><input type="text" class="ing-name" value="'+(name||"")+'" placeholder="Ingredient" '+(locked?'style="font-weight:700"':'')+'></td>' +
+      '<td><input type="number" class="ing-pct" value="'+(pct!==undefined?pct:"")+'" step="0.1" min="0" '+(locked?'style="font-weight:700;color:#004d40"':'')+' oninput="recalc()"></td>' +
+      '<td class="grams">—</td>' +
+      '<td><input type="number" class="ing-cost" value="" step="0.01" min="0" placeholder="0.00" oninput="recalc()"></td>' +
+      '<td class="linecost">—</td>' +
+      '<td><button type="button" class="del-btn" '+(locked?'disabled':'')+' onclick="removeRow(this)" title="Remove row">✕</button></td>';
+    tb.appendChild(tr);
+  }
+
+  window.removeRow = function(btn){
+    btn.closest("tr").remove();
+    renumber();
+    recalc();
+  };
+  window.addRow = function(){ addRow(); recalc(); };
+
+  function renumber(){
+    var rows = document.querySelectorAll("#formulaBody tr");
+    for(var i=0;i<rows.length;i++){ rows[i].cells[0].textContent = (i+1); }
+  }
+
+  window.recalc = function(){
+    flourBasis = parseFloat(document.getElementById("flourBasis").value) || 0;
+    unitWeight = parseFloat(document.getElementById("unitWeight").value) || 0;
+    var rows = document.querySelectorAll("#formulaBody tr");
+    var totalPct = 0, doughW = 0, ingrCost = 0, waterPct = null;
+
+    rows.forEach(function(tr){
+      var nameEl = tr.querySelector(".ing-name");
+      var pct = parseFloat(tr.querySelector(".ing-pct").value) || 0;
+      var costKg = parseFloat(tr.querySelector(".ing-cost").value) || 0;
+      var g = flourBasis * pct / 100;
+      var line = g / 1000 * costKg;
+      tr.cells[3].textContent = fmt(g,1) + " g";
+      tr.cells[5].textContent = costKg > 0 ? peso(line) : "—";
+      totalPct += pct; doughW += g; ingrCost += line;
+      if(/water/i.test(nameEl.value)) waterPct = pct;
+    });
+
+    document.getElementById("kTotalPct").textContent = fmt(totalPct,1) + " %";
+    document.getElementById("kHydration").textContent = waterPct===null ? "—" : fmt(waterPct,1) + " %";
+    document.getElementById("kDough").textContent = fmt(doughW,1) + " g";
+    var units = unitWeight > 0 ? doughW / unitWeight : NaN;
+    document.getElementById("kYield").textContent = isFinite(units) ? fmt(units,0) + " pcs" : "—";
+    document.getElementById("kIngrCost").textContent = ingrCost > 0 ? peso(ingrCost) : "—";
+
+    /* Process parameter checks */
+    var pw = [];
+    var dTemp = parseFloat(document.getElementById("doughTemp").value);
+    var ccp = parseFloat(document.getElementById("ccpTemp").value);
+    var aw = parseFloat(document.getElementById("aw").value);
+    if(isFinite(dTemp) && (dTemp < 26 || dTemp > 28))
+      pw.push('<span class="warn-txt">⚠ Dough exit temperature ' + dTemp + ' °C is outside the mandatory 26–28 °C window.</span>');
+    if(isFinite(ccp) && ccp <= 95)
+      pw.push('<span class="warn-txt">⚠ CCP-1 core temperature must exceed 95 °C for microbial lethality.</span>');
+    if(isFinite(aw) && aw >= 0.60)
+      pw.push('<span class="warn-txt">⚠ Water activity ≥ 0.60 — dry shelf-stable lines require a<sub>w</sub> &lt; 0.60; QA must confirm mold hurdles.</span>');
+    if(pw.length === 0)
+      pw.push('<span class="ok-txt">✓ Process parameters within mandated thermal and stability windows.</span>');
+    document.getElementById("paramWarnings").innerHTML = pw.join("<br>");
+
+    /* Costing */
+    var pack = parseFloat(document.getElementById("packCost").value) || 0;
+    var util = parseFloat(document.getElementById("utilCost").value) || 0;
+    var scrap = parseFloat(document.getElementById("scrapPct").value) || 0;
+    var whM = parseFloat(document.getElementById("whMargin").value) || 0;
+    var reM = parseFloat(document.getElementById("retMargin").value) || 0;
+
+    var batchCost = (ingrCost + pack + util) * (1 + scrap/100);
+    var unit = isFinite(units) && units > 0 ? batchCost / units : NaN;
+    var wholesale = whM < 100 ? unit / (1 - whM/100) : NaN;
+    var srp = reM < 100 ? wholesale / (1 - reM/100) : NaN;
+
+    document.getElementById("cIngr").textContent = ingrCost > 0 ? peso(ingrCost) : "—";
+    document.getElementById("cBatch").textContent = batchCost > 0 ? peso(batchCost) : "—";
+    document.getElementById("cUnit").textContent = isFinite(unit) ? peso(unit) : "—";
+    document.getElementById("cWholesale").textContent = isFinite(wholesale) ? peso(wholesale) : "—";
+    document.getElementById("cSrp").textContent = isFinite(srp) ? peso(srp) : "—";
+
+    var cw = [];
+    if(scrap > 2.0)
+      cw.push('<span class="warn-txt">⚠ Scrap allowance ' + scrap + '% exceeds the < 2.0% cap — Finance must justify before approval.</span>');
+    else if(scrap < 0)
+      cw.push('<span class="warn-txt">⚠ Scrap allowance cannot be negative.</span>');
+    if(cw.length === 0)
+      cw.push('<span class="ok-txt">✓ Scrap within cap. Margin model: cost → wholesale → SRP computed at margins entered above.</span>');
+    document.getElementById("costWarnings").innerHTML = cw.join("<br>");
+  };
+
+  window.resetForm = function(){
+    if(!confirm("Clear all entries on this form?")) return;
+    document.querySelectorAll("input[type=text], input[type=number], textarea").forEach(function(el){ el.value = ""; });
+    document.querySelectorAll("input[type=checkbox]").forEach(function(el){ el.checked = false; });
+    document.querySelectorAll("select").forEach(function(el){ el.selectedIndex = 0; });
+    var tb = document.getElementById("formulaBody");
+    tb.innerHTML = "";
+    defaultRows().forEach(function(r){ addRow(r.name, r.pct, r.locked); });
+    document.getElementById("flourBasis").value = 10000;
+    document.getElementById("unitWeight").value = 55;
+    document.getElementById("doughTemp").value = 27;
+    document.getElementById("ccpTemp").value = 96;
+    document.getElementById("aw").value = 0.55;
+    document.getElementById("scrapPct").value = 2;
+    document.getElementById("whMargin").value = 30;
+    document.getElementById("retMargin").value = 25;
+    document.getElementById("packCost").value = 0;
+    document.getElementById("utilCost").value = 0;
+    initDate();
+    recalc();
+  };
+
+  function initDate(){
+    var d = new Date();
+    document.getElementById("subDate").value = d.toISOString().slice(0,10);
+    var ref = "NPD-" + d.toISOString().slice(0,10).replace(/-/g,"") + "-" +
+      String(1 + Math.floor(Math.random()*899)).padStart(3,"0");
+    document.getElementById("refNo").textContent = ref;
+  }
+
+  /* init */
+  defaultRows().forEach(function(r){ addRow(r.name, r.pct, r.locked); });
+  initDate();
+  recalc();
+})();
+</script>
+</body>
+</html>
