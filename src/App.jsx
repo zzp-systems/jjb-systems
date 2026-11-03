@@ -1,11 +1,11 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
-  Package, Warehouse, ClipboardCheck, Scale, Flame, AlertTriangle, 
+  Package, Warehouse, Scale, Flame, AlertTriangle, 
   FileText, ShieldCheck, RefreshCw, Wifi, WifiOff, CheckCircle2, 
-  Clock, Plus, Search, Filter, Printer, Download, Upload, UserCheck, Lock, Unlock
+  Clock, Plus, Search, Printer
 } from 'lucide-react';
 
-// --- AUTHENTIC 69-SKU MATERIAL MASTER PRE-SEED ---
+// --- AUTHENTIC 69-SKU MATERIAL MASTER PRE-SEED (Top 22 shown for prototype) ---
 const INITIAL_MASTER_SKUS = [
   { code: "RM-FLR-001", cat: "Flour & Grains", brand: "Continental", name: "Continental All Purpose Flour", supplier: "JCT Wheat & Sugar Products", room: "Dry Room 1", uom: "Sack", secUom: "kg", factor: 25, threshold: 10, bal: 1250 },
   { code: "RM-FLR-002", cat: "Flour & Grains", brand: "Isla", name: "3rd Class Isla Flour", supplier: "Lucky Roma Trading", room: "Dry Room 1", uom: "Sack", secUom: "kg", factor: 25, threshold: 10, bal: 11912.75 },
@@ -45,13 +45,18 @@ export default function App() {
     { id: 1, timestamp: "2026-11-03 08:30:12", actor: "Jade Q. Dela Cruz", role: "Warehouse Supervisor", action: "SYSTEM_BOOT", details: "Manual v4.0 WMS initialized successfully." }
   ]);
 
+  // Sync simulation loop & queue processing (with cleanup)
   useEffect(() => {
+    let timeoutId = null;
+    
     const timer = setInterval(() => {
       if (offlineMode) {
         setSyncStatus('OFFLINE — LOCAL QUEUE');
       } else if (queue.length > 0) {
         setSyncStatus('ONLINE — QUEUED (' + queue.length + ')');
-        setTimeout(() => {
+        
+        // Simulate batch worker sync after 3 seconds
+        timeoutId = setTimeout(() => {
           setQueue(prev => {
             if (prev.length === 0) return [];
             const remaining = prev.slice(1);
@@ -63,7 +68,11 @@ export default function App() {
         setSyncStatus('ONLINE — SYNCED');
       }
     }, 2000);
-    return () => clearInterval(timer);
+
+    return () => {
+      clearInterval(timer);
+      if (timeoutId) clearTimeout(timeoutId);
+    };
   }, [offlineMode, queue.length]);
 
   const handleForensicFix = () => {
@@ -102,6 +111,7 @@ export default function App() {
         </div>
 
         <div className="flex items-center gap-3 flex-wrap">
+          {/* Sync Status Badge */}
           <div className={`px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1.5 shadow-sm ${
             syncStatus.includes('SYNCED') ? 'bg-[#1E7A3E] text-white' :
             syncStatus.includes('QUEUED') ? 'bg-[#D68910] text-white animate-pulse' : 'bg-[#C0392B] text-white'
@@ -110,6 +120,7 @@ export default function App() {
             <span>{syncStatus}</span>
           </div>
 
+          {/* Role Switcher */}
           <select 
             value={currentRole} 
             onChange={(e) => setCurrentRole(e.target.value)}
@@ -122,6 +133,7 @@ export default function App() {
             <option>Finance & Costing (Jeanifer S. Sauping)</option>
           </select>
 
+          {/* Offline Toggle */}
           <button 
             onClick={() => setOfflineMode(!offlineMode)} 
             className={`px-3 py-1.5 rounded text-xs font-bold flex items-center gap-1 ${offlineMode ? 'bg-[#C0392B] text-white' : 'bg-[#3D1C52] text-[#E5C585]'}`}
@@ -342,7 +354,11 @@ export default function App() {
                       <td className="p-3">{r.date}</td>
                       <td className="p-3 text-right font-bold text-gray-800">₱{r.totalPaid.toLocaleString()}</td>
                       <td className="p-3 text-center">
-                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-green-100 text-[#1E7A3E]">COMPLETE</span>
+                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                          r.status === 'Damaged' ? 'bg-red-100 text-[#C0392B]' : 'bg-green-100 text-[#1E7A3E]'
+                        }`}>
+                          {r.status.toUpperCase()}
+                        </span>
                       </td>
                     </tr>
                   ))}
@@ -454,7 +470,7 @@ export default function App() {
               <div className="bg-white p-6 rounded-xl border border-[#E2D1B8] shadow-sm space-y-4">
                 <div className="flex justify-between items-center border-b pb-2">
                   <h3 className="font-serif font-bold text-[#5B2E7A]">Shift Yield Reconciliation Calculator</h3>
-                  <span className="bg-green-100 text-[#1E7A3E] text-[10px] font-bold px-2 py-0.5 rounded">Target Var < 2.0%</span>
+                  <span className="bg-green-100 text-[#1E7A3E] text-[10px] font-bold px-2 py-0.5 rounded">Target Var &lt; 2.0%</span>
                 </div>
                 <div className="space-y-3 text-xs">
                   <div>
@@ -628,6 +644,7 @@ export default function App() {
 
       </main>
 
+      {/* FOOTER */}
       <footer className="bg-[#3D1C52] text-white py-4 px-6 text-center text-xs border-t border-[#C8963E]/30 mt-auto">
         <p>Jang-Jang Bakeshop & Kingdom Confectionary Business Lines · Manual of Operations Rev. 4.0 WMS Engine</p>
         <p className="text-[#E5C585] mt-1">Deployed on Cloudflare Pages & Google Apps Script Queue-First Architecture (`₱0.00 / Month` Stack)</p>
