@@ -25,16 +25,16 @@ const INITIAL_MASTER_SKUS = [
   { code: "RM-DRY-001", cat: "Dairy & Eggs", brand: "Coop", name: "Fresh Eggs", supplier: "Local Poultry Coop", room: "Wet Room", uom: "Tray", secUom: "pcs", factor: 30, threshold: 50, bal: 3885 },
   { code: "RM-DRY-002", cat: "Dairy & Eggs", brand: "Master Chef", name: "Condensada (1kg Tin Can)", supplier: "Lucky Roma Trading", room: "Wet Room", uom: "Tin Can", secUom: "kg", factor: 1, threshold: 10, bal: 555.001 },
   { code: "RM-DRY-003", cat: "Dairy & Eggs", brand: "Jersey", name: "Evaporada (370ml Tin Can)", supplier: "Golden Fortune Trading", room: "Wet Room", uom: "Box", secUom: "can", factor: 48, threshold: 5, bal: 1393 },
-  { code: "RM-LEV-001", cat: "Leavening & Additives", brand: "Gloripan", name: "Gloripan Instant Dry Yeast", supplier: "JCT Wheat & Sugar Products", room: "Dry Room 1", uom: "Box", secUom: "kg", factor: 10, threshold: 3, bal: -10 }, // Negative anomaly flag
+  { code: "RM-LEV-001", cat: "Leavening & Additives", brand: "Gloripan", name: "Gloripan Instant Dry Yeast", supplier: "JCT Wheat & Sugar Products", room: "Dry Room 1", uom: "Box", secUom: "kg", factor: 10, threshold: 3, bal: -10 },
   { code: "RM-LEV-002", cat: "Leavening & Additives", brand: "Calumet", name: "Calumet Baking Powder", supplier: "JCT Wheat & Sugar Products", room: "Dry Room 1", uom: "Bag", secUom: "kg", factor: 14, threshold: 2, bal: 135 },
   { code: "PM-PAP-001", cat: "Packaging Materials", brand: "Mandaue Libertad", name: "Glassine Wax Paper Sheets (Otap Wrapping)", supplier: "Mandaue Libertad", room: "Dry Room 2", uom: "Rim", secUom: "pcs", factor: 500, threshold: 5, bal: 3000 },
-  { code: "PM-PAP-002", cat: "Packaging Materials", brand: "Pattern Paper", name: "Baking Pan Pattern Paper (Laminated Sheets)", supplier: "JCT Wheat & Sugar Products", room: "Dry Room 2", uom: "Rim", secUom: "pcs", factor: 500, threshold: 3, bal: -18515 } // Negative anomaly flag
+  { code: "PM-PAP-002", cat: "Packaging Materials", brand: "Pattern Paper", name: "Baking Pan Pattern Paper (Laminated Sheets)", supplier: "JCT Wheat & Sugar Products", room: "Dry Room 2", uom: "Rim", secUom: "pcs", factor: 500, threshold: 3, bal: -18515 }
 ];
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [currentRole, setCurrentRole] = useState('Warehouse Supervisor (Jade Q. Dela Cruz)');
-  const [syncStatus, setSyncStatus] = useState('ONLINE — SYNCED'); // 'ONLINE — SYNCED' | 'ONLINE — QUEUED' | 'OFFLINE — LOCAL QUEUE'
+  const [syncStatus, setSyncStatus] = useState('ONLINE — SYNCED');
   const [offlineMode, setOfflineMode] = useState(false);
   const [inventory, setInventory] = useState(INITIAL_MASTER_SKUS);
   const [queue, setQueue] = useState([]);
@@ -45,14 +45,12 @@ export default function App() {
     { id: 1, timestamp: "2026-11-03 08:30:12", actor: "Jade Q. Dela Cruz", role: "Warehouse Supervisor", action: "SYSTEM_BOOT", details: "Manual v4.0 WMS initialized successfully." }
   ]);
 
-  // Sync simulation loop & queue processing
   useEffect(() => {
     const timer = setInterval(() => {
       if (offlineMode) {
         setSyncStatus('OFFLINE — LOCAL QUEUE');
       } else if (queue.length > 0) {
         setSyncStatus('ONLINE — QUEUED (' + queue.length + ')');
-        // Simulate batch worker sync after 3 seconds
         setTimeout(() => {
           setQueue(prev => {
             if (prev.length === 0) return [];
@@ -68,11 +66,10 @@ export default function App() {
     return () => clearInterval(timer);
   }, [offlineMode, queue.length]);
 
-  // Forensic Anomaly Reconciliation Fix
   const handleForensicFix = () => {
     setInventory(prev => prev.map(item => {
-      if (item.code === "RM-LEV-001") return { ...item, bal: 40 }; // Fix negative yeast
-      if (item.code === "PM-PAP-002") return { ...item, bal: 1500 }; // Fix negative pattern paper
+      if (item.code === "RM-LEV-001") return { ...item, bal: 40 };
+      if (item.code === "PM-PAP-002") return { ...item, bal: 1500 };
       return item;
     }));
     setAuditLogs(prev => [
@@ -105,7 +102,6 @@ export default function App() {
         </div>
 
         <div className="flex items-center gap-3 flex-wrap">
-          {/* Sync Status Badge */}
           <div className={`px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1.5 shadow-sm ${
             syncStatus.includes('SYNCED') ? 'bg-[#1E7A3E] text-white' :
             syncStatus.includes('QUEUED') ? 'bg-[#D68910] text-white animate-pulse' : 'bg-[#C0392B] text-white'
@@ -114,7 +110,6 @@ export default function App() {
             <span>{syncStatus}</span>
           </div>
 
-          {/* Role Switcher */}
           <select 
             value={currentRole} 
             onChange={(e) => setCurrentRole(e.target.value)}
@@ -127,7 +122,6 @@ export default function App() {
             <option>Finance & Costing (Jeanifer S. Sauping)</option>
           </select>
 
-          {/* Offline Toggle */}
           <button 
             onClick={() => setOfflineMode(!offlineMode)} 
             className={`px-3 py-1.5 rounded text-xs font-bold flex items-center gap-1 ${offlineMode ? 'bg-[#C0392B] text-white' : 'bg-[#3D1C52] text-[#E5C585]'}`}
@@ -322,7 +316,6 @@ export default function App() {
               </div>
             </div>
 
-            {/* Recent Receiving Logs */}
             <div className="bg-white rounded-xl border border-[#E2D1B8] shadow-sm overflow-hidden">
               <div className="px-6 py-4 bg-[#FAF6EE] border-b border-[#E2D1B8]">
                 <h3 className="font-serif font-bold text-[#5B2E7A]">Recent Inbound Shipment Valuations</h3>
@@ -367,7 +360,6 @@ export default function App() {
               <p className="text-xs text-gray-600">Verify 5 City Treasurer scale seals (`#798073`–`#798605`), 40-mesh sifter, and Davao climate ice calculator.</p>
             </div>
 
-            {/* Scale Calibration Verification Card */}
             <div className="bg-white p-6 rounded-xl border border-[#E2D1B8] shadow-sm space-y-4">
               <h3 className="font-serif font-bold text-[#5B2E7A] border-b pb-2 flex items-center justify-between">
                 <span>Gate 0 — Pre-Shift 5-Scale Metrology Calibration (`Form-CAL-001`)</span>
@@ -393,7 +385,6 @@ export default function App() {
               </div>
             </div>
 
-            {/* Batch Requisition Form */}
             <div className="bg-white p-6 rounded-xl border border-[#E2D1B8] shadow-sm space-y-4">
               <h3 className="font-serif font-bold text-[#5B2E7A] border-b pb-2">Daily Production Requisition & Unitized Batch Kitting (`Form-PRO-001` / `Form-ING-001`)</h3>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
@@ -444,7 +435,6 @@ export default function App() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Live 4h Banya Glaze OPRP Timer */}
               <div className="bg-white p-6 rounded-xl border border-[#E2D1B8] shadow-sm space-y-4">
                 <div className="flex justify-between items-center border-b pb-2">
                   <h3 className="font-serif font-bold text-[#5B2E7A]">Biscocho *Banya* Glaze OPRP Timer</h3>
@@ -461,7 +451,6 @@ export default function App() {
                 </div>
               </div>
 
-              {/* Shift Yield Reconciliation Calculator */}
               <div className="bg-white p-6 rounded-xl border border-[#E2D1B8] shadow-sm space-y-4">
                 <div className="flex justify-between items-center border-b pb-2">
                   <h3 className="font-serif font-bold text-[#5B2E7A]">Shift Yield Reconciliation Calculator</h3>
@@ -586,7 +575,6 @@ export default function App() {
               <p className="text-xs text-gray-600">Inspect real-time Cloudflare-to-GAS queue states (`LOCAL_QUEUE` -> `QUEUED` -> `SYNCED`) and `waitLock(5000)` logs.</p>
             </div>
 
-            {/* Queue Inspector Card */}
             <div className="bg-white p-6 rounded-xl border border-[#E2D1B8] shadow-sm space-y-3">
               <div className="flex justify-between items-center border-b pb-2">
                 <h3 className="font-serif font-bold text-[#5B2E7A]">Cloudflare Pages & Google Apps Script Queue Inspector</h3>
@@ -608,7 +596,6 @@ export default function App() {
               </div>
             </div>
 
-            {/* Immutable Audit Log Table */}
             <div className="bg-white rounded-xl border border-[#E2D1B8] shadow-sm overflow-hidden">
               <div className="px-6 py-4 bg-[#FAF6EE] border-b border-[#E2D1B8]">
                 <h3 className="font-serif font-bold text-[#5B2E7A]">Chronological Immutable Audit Log</h3>
@@ -641,7 +628,6 @@ export default function App() {
 
       </main>
 
-      {/* FOOTER */}
       <footer className="bg-[#3D1C52] text-white py-4 px-6 text-center text-xs border-t border-[#C8963E]/30 mt-auto">
         <p>Jang-Jang Bakeshop & Kingdom Confectionary Business Lines · Manual of Operations Rev. 4.0 WMS Engine</p>
         <p className="text-[#E5C585] mt-1">Deployed on Cloudflare Pages & Google Apps Script Queue-First Architecture (`₱0.00 / Month` Stack)</p>
