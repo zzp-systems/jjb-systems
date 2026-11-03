@@ -22,6 +22,8 @@ import {
 } from './data/initialData';
 
 const STORAGE_KEY = 'JJB_WMS_LIVE_V4_4_STATE';
+const WORKER_SYNC_URL = '/api/sync';
+const GAS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwBll5ZKuiBO0wX9WSXGRd-Tua4QpxbfKAcrnWhVmdkjkU_3mnwgI7bX-iiRgjHlkYa/exec';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -30,6 +32,7 @@ export default function App() {
   const [isOffline, setIsOffline] = useState(false);
   const [queueCount, setQueueCount] = useState(0);
   const [lastAutoDispatchTime, setLastAutoDispatchTime] = useState(null);
+  const [liveToast, setLiveToast] = useState(null);
 
   // Hydrate state from localStorage so Jade's & Romeo's November 2026+ updates persist across browser refreshes
   const loadSaved = (key, fallback) => {
@@ -53,6 +56,8 @@ export default function App() {
 
   const [prefilledItem, setPrefilledItem] = useState(null);
   const lastTriggeredDateRef = useRef(null);
+  const lastPolledTimestampRef = useRef(0);
+  const processedQueueIdsRef = useRef(new Set());
 
   // Save state changes to localStorage
   useEffect(() => {
@@ -82,27 +87,132 @@ export default function App() {
   // Offline Queue Sync Drain Simulation
   useEffect(() => {
     if (queueCount > 0 && !isOffline) {
-      const timer = setTimeout(() => setQueueCount(prev => Math.max(0, prev - 1)), 2500);
+      const timer = setTimeout(() => setQueueCount(prev => Math.max(0, prev - 1)), 2000);
       return () => clearTimeout(timer);
     }
   }, [queueCount, isOffline]);
 
-  const recordAudit = (action, details) => {
+  // --- AUTOMATIC CLOUDFLARE WORKER + GOOGLE APPS SCRIPT DISPATCH BRIDGE ---
+  const recordAudit = (action, details, payloadData = {}) => {
+    const queueId = `Q-${Date.now()}-${Math.random().toString(36).slice(2, 6).toUpperCase()}`;
+    processedQueueIdsRef.current.add(queueId);
+
+    const roleLabel = currentRole.includes('Jade')
+      ? 'Terminal 1 · Warehouse Supervisor'
+      : currentRole.includes('Romeo')
+      ? 'Terminal 2 · Ingredient Batching Preparer'
+      : 'Terminal 3 · Operations / Management';
+
     const newLog = {
-      id: Date.now() + Math.random(),
+      id: queueId,
       timestamp: new Date().toLocaleString('en-PH', { timeZone: 'Asia/Manila' }),
       actor: currentRole,
-      role: currentRole.includes('Jade')
-        ? 'Terminal 1 · Warehouse Supervisor'
-        : currentRole.includes('Romeo')
-        ? 'Terminal 2 · Ingredient Batching Preparer'
-        : 'Terminal 3 · Operations / Management',
+      role: roleLabel,
       action,
       details
     };
+
     setAuditLogs(prev => [newLog, ...prev]);
-    if (!isOffline) setQueueCount(prev => prev + 1);
+
+    if (!isOffline) {
+      setQueueCount(prev => prev + 1);
+      const envelope = {
+        queueId,
+        timestamp: newLog.timestamp,
+        terminalId: roleLabel.split('·')[0].trim(),
+        actorName: currentRole,
+        actorRole: roleLabel,
+        actionType: action,
+        details,
+        payload: payloadData
+      };
+
+      // 1. Primary: Dispatch to Cloudflare Worker API (/api/sync), which dual-writes to Edge/D1 + Google Sheets
+      fetch(WORKER_SYNC_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(envelope)
+      }).catch(() => {
+        // 2. Fallback: Direct POST to Google Apps Script Web App if running locally without Worker
+        fetch(GAS_WEB_APP_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify(envelope),
+          mode: 'no-cors'
+        }).catch(() => {});
+      });
+    }
   };
+
+  // --- REAL-TIME OUTLET PORTAL & MULTI-TERMINAL AUTO-POLLING (Every 4 Seconds) ---
+  useEffect(() => {
+    if (isOffline) return;
+
+    const ingestIncomingEvent = (ev) => {
+      if (!ev || !ev.queueId || processedQueueIdsRef.current.has(ev.queueId)) return;
+      processedQueueIdsRef.current.add(ev.queueId);
+
+      const p = ev.payload || {};
+      let notificationMsg = null;
+
+      if (ev.actionType === 'BATCH_REQUISITION' && p.orderId) {
+        setBatchOrders(prev => {
+          if (prev.some(o => o.orderId === p.orderId)) return prev;
+          notificationMsg = `New Outlet Kit Order: ${p.outletName} requested ${p.batchMultiplier}x ${p.recipeName} (${p.orderId})`;
+          return [p, ...prev];
+        });
+      } else if (ev.actionType === 'BULK_REQUISITION_REQUESTED' && p.slipNo) {
+        setWithdrawals(prev => {
+          if (prev.some(w => w.slipNo === p.slipNo)) return prev;
+          notificationMsg = `New Material Pull Request: ${p.requestingEntity} (${p.slipNo}) awaiting Jade's approval`;
+          return [p, ...prev];
+        });
+      }
+
+      if (notificationMsg) {
+        setLiveToast(notificationMsg);
+        setTimeout(() => setLiveToast(null), 6000);
+      }
+
+      setAuditLogs(prev => [
+        {
+          id: ev.queueId,
+          timestamp: ev.timestamp || new Date().toLocaleString('en-PH', { timeZone: 'Asia/Manila' }),
+          actor: ev.actorName || 'Outlet Portal',
+          role: ev.actorRole || 'Outlet Requisitioner',
+          action: ev.actionType,
+          details: ev.details || `Incoming live order (${p.orderId || p.slipNo})`
+        },
+        ...prev
+      ]);
+    };
+
+    const pollEdgeWorkerAndInbox = async () => {
+      // 1. Check same-domain localStorage inbox (instantaneous on same device)
+      try {
+        const localInbox = JSON.parse(localStorage.getItem('JJB_PORTAL_INBOX') || '[]');
+        if (localInbox.length > 0) {
+          localInbox.forEach(ingestIncomingEvent);
+          localStorage.removeItem('JJB_PORTAL_INBOX');
+        }
+      } catch (e) {}
+
+      // 2. Poll Cloudflare Worker Edge API (/api/sync) for cross-device Outlet Portal submissions
+      try {
+        const res = await fetch(`${WORKER_SYNC_URL}?since=${lastPolledTimestampRef.current}`);
+        if (res.ok) {
+          const data = await res.json();
+          if (Array.isArray(data.events) && data.events.length > 0) {
+            data.events.forEach(ingestIncomingEvent);
+            lastPolledTimestampRef.current = data.serverTimeMs || Date.now();
+          }
+        }
+      } catch (e) {}
+    };
+
+    const pollTimer = setInterval(pollEdgeWorkerAndInbox, 4000);
+    return () => clearInterval(pollTimer);
+  }, [isOffline]);
 
   // --- AUTOMATED 23:45 PHT NIGHTLY EOD SETTLEMENT REPORT WATCHER ---
   useEffect(() => {
@@ -118,7 +228,8 @@ export default function App() {
         setLastAutoDispatchTime(stamp);
         recordAudit(
           'AUTOMATED_EOD_2345_DISPATCH',
-          `Scheduled 23:45 PHT EOD Settlement Report (Inbound Receiving, Floor Withdrawals, and 3-Step Batching Lifecycle) automatically compiled and queued to ${EOD_EMAIL_RECIPIENTS.join(', ')}`
+          `Scheduled 23:45 PHT EOD Settlement Report (Inbound Receiving, Floor Withdrawals, and 3-Step Batching Lifecycle) automatically compiled and queued to ${EOD_EMAIL_RECIPIENTS.join(', ')}`,
+          { date: dateKey, recipients: EOD_EMAIL_RECIPIENTS }
         );
       }
     };
@@ -153,7 +264,11 @@ export default function App() {
       }
       return invItem;
     }));
-    recordAudit('INBOUND_RECEIVING', `Logged Form-REC-001 ${report.reportNo} from ${report.supplier} valued at ₱${report.totalPaid?.toLocaleString()}`);
+    recordAudit(
+      'INBOUND_RECEIVING',
+      `Logged Form-REC-001 ${report.reportNo} from ${report.supplier} valued at ₱${report.totalPaid?.toLocaleString()}`,
+      report
+    );
     setActiveTab('dashboard');
   };
 
@@ -172,7 +287,11 @@ export default function App() {
         return invItem;
       }));
     }
-    recordAudit('STOCK_OUT_ISSUANCE', `Issued Form-WAR-001 ${slip.slipNo} to ${slip.requestingEntity}`);
+    recordAudit(
+      'STOCK_OUT_ISSUANCE',
+      `Issued Form-WAR-001 ${slip.slipNo} to ${slip.requestingEntity}`,
+      slip
+    );
   };
 
   // 3. Step 1 of Batching: Intake Outlet Order (Form-PRO-001)
@@ -180,7 +299,8 @@ export default function App() {
     setBatchOrders(prev => [newOrder, ...prev]);
     recordAudit(
       'BATCH_REQUISITION',
-      `Created Form-PRO-001 (${newOrder.orderId}) for ${newOrder.batchMultiplier} Kits of ${newOrder.recipeName} to ${newOrder.outletName}`
+      `Created Form-PRO-001 (${newOrder.orderId}) for ${newOrder.batchMultiplier} Kits of ${newOrder.recipeName} to ${newOrder.outletName}`,
+      newOrder
     );
   };
 
@@ -223,21 +343,20 @@ export default function App() {
       status: 'PENDING_APPROVAL'
     };
 
+    const updatedOrder = {
+      ...order,
+      bulkMaterialsRequested: true,
+      bulkRequisitionStatus: 'PENDING_JADE_APPROVAL',
+      linkedWithdrawalSlipNo: newSlipNo
+    };
+
     setWithdrawals(prev => [newSlip, ...prev]);
-    setBatchOrders(prev => prev.map(o =>
-      o.orderId === order.orderId
-        ? {
-            ...o,
-            bulkMaterialsRequested: true,
-            bulkRequisitionStatus: 'PENDING_JADE_APPROVAL',
-            linkedWithdrawalSlipNo: newSlipNo
-          }
-        : o
-    ));
+    setBatchOrders(prev => prev.map(o => o.orderId === order.orderId ? updatedOrder : o));
 
     recordAudit(
       'BULK_REQUISITION_REQUESTED',
-      `Romeo B. Malusay submitted Bulk Material Pull Request (${newSlipNo}) to Jade Q. Dela Cruz for Order ${order.orderId} (${order.batchMultiplier} Kits of ${order.recipeName}).`
+      `Romeo B. Malusay submitted Bulk Material Pull Request (${newSlipNo}) to Jade Q. Dela Cruz for Order ${order.orderId} (${order.batchMultiplier} Kits of ${order.recipeName}).`,
+      { ...newSlip, orderId: order.orderId, bulkRequisitionStatus: 'PENDING_JADE_APPROVAL', linkedWithdrawalSlipNo: newSlipNo }
     );
 
     alert(
@@ -262,16 +381,14 @@ export default function App() {
       return invItem;
     }));
 
+    const approvedSlip = {
+      ...targetSlip,
+      status: 'ISSUED & RECONCILED',
+      issuedBy: 'Jade Q. Dela Cruz (Warehouse Supervisor)'
+    };
+
     // Mark Form-WAR-001 slip as ISSUED & RECONCILED
-    setWithdrawals(prev => prev.map(w =>
-      w.slipNo === slipNo
-        ? {
-            ...w,
-            status: 'ISSUED & RECONCILED',
-            issuedBy: 'Jade Q. Dela Cruz (Warehouse Supervisor)'
-          }
-        : w
-    ));
+    setWithdrawals(prev => prev.map(w => w.slipNo === slipNo ? approvedSlip : w));
 
     // Unlock Romeo's "2. Scale & Kit Recipe Mix" button on BatchingWorkbench
     setBatchOrders(prev => prev.map(o => {
@@ -293,7 +410,8 @@ export default function App() {
 
     recordAudit(
       'BULK_REQUISITION_APPROVED',
-      `Jade Q. Dela Cruz approved Form-WAR-001 (${slipNo}), deducted FEFO bulk lots, and transferred materials across the Dutch door to Romeo B. Malusay.`
+      `Jade Q. Dela Cruz approved Form-WAR-001 (${slipNo}), deducted FEFO bulk lots, and transferred materials across the Dutch door to Romeo B. Malusay.`,
+      approvedSlip
     );
   };
 
@@ -305,6 +423,8 @@ export default function App() {
     actualBatchedKg = 0,
     scaleSealUsed = 'Seal #798073 (Bench Scale #1)'
   ) => {
+    let updatedOrderSnapshot = null;
+
     setBatchOrders(prev => prev.map(order => {
       if (order.orderId === orderId) {
         const assignedDriver = order.outletName.includes('Pan de Verde')
@@ -313,7 +433,7 @@ export default function App() {
           ? 'Roberto S. Blase (Laurice Logistics)'
           : 'Internal Grey Zone Airlock Transfer';
 
-        return { 
+        updatedOrderSnapshot = { 
           ...order, 
           status: newStatus,
           batchTagId: batchTagId || order.batchTagId,
@@ -326,19 +446,30 @@ export default function App() {
           releasedAt: newStatus === 'RELEASED' ? new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : order.releasedAt,
           releasedTo: newStatus === 'RELEASED' ? assignedDriver : order.releasedTo
         };
+        return updatedOrderSnapshot;
       }
       return order;
     }));
 
     if (newStatus === 'BATCHED_KITTED') {
-      recordAudit('BATCH_KITTED', `Romeo B. Malusay certified Form-ING-001 scaling (${batchTagId}, ${actualBatchedKg} kg on ${scaleSealUsed}) for Order ${orderId}`);
+      recordAudit(
+        'BATCH_KITTED',
+        `Romeo B. Malusay certified Form-ING-001 scaling (${batchTagId}, ${actualBatchedKg} kg on ${scaleSealUsed}) for Order ${orderId}`,
+        updatedOrderSnapshot || { orderId, status: newStatus, batchTagId, actualBatchedKg, scaleUsed: scaleSealUsed }
+      );
     } else if (newStatus === 'RELEASED') {
-      recordAudit('BATCH_RELEASED', `Released sealed batch kit for Order ${orderId} to outlet logistics`);
+      recordAudit(
+        'BATCH_RELEASED',
+        `Released sealed batch kit for Order ${orderId} to outlet logistics`,
+        updatedOrderSnapshot || { orderId, status: newStatus }
+      );
     }
   };
 
   const handleBulkReleaseOrders = () => {
     const nowTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const releasedBatchPayload = [];
+
     setBatchOrders(prev => prev.map(order => {
       if (order.status === 'BATCHED_KITTED') {
         const assignedDriver = order.outletName.includes('Pan de Verde')
@@ -346,11 +477,18 @@ export default function App() {
           : order.outletName.includes('Laurice')
           ? 'Roberto S. Blase (Laurice Logistics)'
           : 'Internal Grey Zone Airlock Transfer';
-        return { ...order, status: 'RELEASED', releasedAt: nowTime, releasedTo: assignedDriver };
+        const rel = { ...order, status: 'RELEASED', releasedAt: nowTime, releasedTo: assignedDriver };
+        releasedBatchPayload.push(rel);
+        return rel;
       }
       return order;
     }));
-    recordAudit('BULK_BATCH_RELEASE', 'Collectively released all completed kitted batches to outlet drivers');
+
+    recordAudit(
+      'BULK_BATCH_RELEASE',
+      `Collectively released ${releasedBatchPayload.length} completed kitted batches to outlet drivers`,
+      { orders: releasedBatchPayload }
+    );
   };
 
   const handleSaveAdjustment = (adj) => {
@@ -365,12 +503,20 @@ export default function App() {
       }
       return invItem;
     }));
-    recordAudit('INVENTORY_ADJUSTMENT', `Logged ${adj.type} for ${adj.materialCode} (${adj.qtySec} ${adj.uom})`);
+    recordAudit(
+      'INVENTORY_ADJUSTMENT',
+      `Logged ${adj.type} for ${adj.materialCode} (${adj.qtySec} ${adj.uom})`,
+      adj
+    );
   };
 
   const handleSaveQuarantine = (ncr) => {
     setQuarantineList(prev => [ncr, ...prev]);
-    recordAudit('QUARANTINE_NCR', `Filed Form-NCR-001 ${ncr.ncrNo} for ${ncr.itemDescription}`);
+    recordAudit(
+      'QUARANTINE_NCR',
+      `Filed Form-NCR-001 ${ncr.ncrNo} for ${ncr.itemDescription}`,
+      ncr
+    );
   };
 
   // CSV Bulk Inventory Update Handler (Supports both newBalanceSec and currentBalance keys)
@@ -385,7 +531,11 @@ export default function App() {
         unitCost: match.unitCost !== undefined ? match.unitCost : item.unitCost
       };
     }));
-    recordAudit('CSV_INVENTORY_IMPORT', `Bulk updated ${updates.length} SKU balances via CSV import`);
+    recordAudit(
+      'CSV_INVENTORY_IMPORT',
+      `Bulk updated ${updates.length} SKU balances via CSV import`,
+      { count: updates.length }
+    );
   };
 
   const handleQuickAction = (tab, item = null) => {
@@ -434,6 +584,14 @@ export default function App() {
         lowStockCount={lowStockCount}
         onQuickEod={() => setActiveTab('eod')}
       />
+
+      {/* Live Incoming Order Notification Toast from Outlet Portal */}
+      {liveToast && (
+        <div className="bg-[#1E7A3E] text-white px-4 py-2.5 text-xs font-bold text-center shadow-lg animate-bounce flex items-center justify-center gap-2 print:hidden">
+          <span>🔔 LIVE OUTLET PORTAL SYNC: {liveToast}</span>
+          <button onClick={() => setLiveToast(null)} className="ml-3 underline text-[11px]">Dismiss</button>
+        </div>
+      )}
 
       <main className="flex-1 p-4 md:p-6 max-w-7xl mx-auto w-full">
         {activeTab === 'dashboard' && (
@@ -529,7 +687,9 @@ export default function App() {
 
       <footer className="bg-[#3D1C52] text-white py-4 px-6 text-center text-xs border-t border-[#C8963E]/30 mt-auto print:hidden">
         <p>Jang-Jang Bakeshop & Kingdom Confectionary Business Lines · Manual of Operations Rev. 4.0 WMS Engine</p>
-        <p className="text-[#E5C585] mt-1">Terminals 1–3 Active · Deployed on Cloudflare Pages & Google Apps Script Queue-First Architecture</p>
+        <p className="text-[#E5C585] mt-1">
+          Terminals 1–3 Active · Cloudflare Worker Edge API (`/api/sync`) + Google Sheets Master Ledger · <a href="/outlet-portal.html" target="_blank" rel="noreferrer" className="underline font-bold text-white hover:text-[#C8963E]">Open Outlet Requisition Portal ↗</a>
+        </p>
       </footer>
     </div>
   );
