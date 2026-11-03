@@ -14,344 +14,167 @@ import {
   INITIAL_RECEIVING_REPORTS, 
   INITIAL_WITHDRAWALS, 
   INITIAL_BATCHING_ORDERS, 
-  INITIAL_ADJUSTMENTS, 
-  INITIAL_QUARANTINE, 
   INITIAL_AUDIT_LOGS,
-  EOD_EMAIL_RECIPIENTS
+  INITIAL_QUARANTINE,
+  INITIAL_ADJUSTMENTS
 } from './data/initialData';
 
-import { CheckCircle2, AlertTriangle, RefreshCw } from 'lucide-react';
-
 export default function App() {
-  // Persistence Helpers
-  const getSaved = (key, fallback) => {
-    try {
-      const saved = localStorage.getItem(`jjb_wms_${key}`);
-      return saved ? JSON.parse(saved) : fallback;
-    } catch (e) {
-      return fallback;
-    }
-  };
-
-  const saveToStorage = (key, value) => {
-    try {
-      localStorage.setItem(`jjb_wms_${key}`, JSON.stringify(value));
-    } catch (e) {
-      console.error("Storage error:", e);
-    }
-  };
-
-  // Main State
-  const [inventory, setInventory] = useState(() => getSaved('inventory', MASTER_MATERIALS));
-  const [receivingReports, setReceivingReports] = useState(() => getSaved('receiving', INITIAL_RECEIVING_REPORTS));
-  const [withdrawals, setWithdrawals] = useState(() => getSaved('withdrawals', INITIAL_WITHDRAWALS));
-  const [batchOrders, setBatchOrders] = useState(() => getSaved('batch_orders', INITIAL_BATCHING_ORDERS));
-  const [adjustments, setAdjustments] = useState(() => getSaved('adjustments', INITIAL_ADJUSTMENTS));
-  const [quarantineList, setQuarantineList] = useState(() => getSaved('quarantine', INITIAL_QUARANTINE));
-  const [auditLogs, setAuditLogs] = useState(() => getSaved('audit_logs', INITIAL_AUDIT_LOGS));
-
-  // Operational State
-  const [currentRole, setCurrentRole] = useState("Jade Q. Dela Cruz");
   const [activeTab, setActiveTab] = useState('dashboard');
+  const [currentRole, setCurrentRole] = useState('Jade Q. Dela Cruz');
   const [isMobileMode, setIsMobileMode] = useState(false);
   const [isOffline, setIsOffline] = useState(false);
-  const [toastMessage, setToastMessage] = useState(null);
+  const [queueCount, setQueueCount] = useState(0);
+
+  const [inventory, setInventory] = useState(MASTER_MATERIALS);
+  const [receivingReports, setReceivingReports] = useState(INITIAL_RECEIVING_REPORTS);
+  const [withdrawals, setWithdrawals] = useState(INITIAL_WITHDRAWALS);
+  const [batchOrders, setBatchOrders] = useState(INITIAL_BATCHING_ORDERS);
+  const [quarantineList, setQuarantineList] = useState(INITIAL_QUARANTINE);
+  const [adjustments, setAdjustments] = useState(INITIAL_ADJUSTMENTS);
+  const [auditLogs, setAuditLogs] = useState(INITIAL_AUDIT_LOGS);
+
   const [prefilledItem, setPrefilledItem] = useState(null);
 
-  // Sync state to LocalStorage
-  useEffect(() => { saveToStorage('inventory', inventory); }, [inventory]);
-  useEffect(() => { saveToStorage('receiving', receivingReports); }, [receivingReports]);
-  useEffect(() => { saveToStorage('withdrawals', withdrawals); }, [withdrawals]);
-  useEffect(() => { saveToStorage('batch_orders', batchOrders); }, [batchOrders]);
-  useEffect(() => { saveToStorage('adjustments', adjustments); }, [adjustments]);
-  useEffect(() => { saveToStorage('quarantine', quarantineList); }, [quarantineList]);
-  useEffect(() => { saveToStorage('audit_logs', auditLogs); }, [auditLogs]);
+  const lowStockCount = inventory.filter(i => i.currentBalance <= i.threshold).length;
+  const pendingBatchCount = batchOrders.filter(b => b.status === 'PENDING_BATCHING').length;
 
-  // Toast Helper
-  const showToast = (message) => {
-    setToastMessage(message);
-    setTimeout(() => setToastMessage(null), 4000);
-  };
+  useEffect(() => {
+    if (queueCount > 0 && !isOffline) {
+      const timer = setTimeout(() => setQueueCount(prev => prev - 1), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [queueCount, isOffline]);
 
-  // Audit Helper
   const recordAudit = (action, details) => {
     const newLog = {
       id: Date.now(),
-      timestamp: new Date().toISOString().slice(0, 19).replace('T', ' '),
+      timestamp: new Date().toLocaleString('en-PH', { timeZone: 'Asia/Manila' }),
       actor: currentRole,
-      role: currentRole.includes('Jade') ? 'Warehouse Supervisor' :
-            currentRole.includes('Romeo') ? 'Ingredient Batching Preparer' :
-            currentRole.includes('Mariejohn') ? 'Inventory & Purchasing Manager' :
-            currentRole.includes('Grace') ? 'FSCO & QA Director' : 'Chief Operating Authority',
+      role: currentRole === 'Jade Q. Dela Cruz' ? 'Warehouse Supervisor' : 'Operations Personnel',
       action,
       details
     };
     setAuditLogs(prev => [newLog, ...prev]);
+    if (!isOffline) setQueueCount(prev => prev + 1);
   };
 
-  // WORKFLOW 1: Inbound Receiving Save
-  const handleSaveReceiving = (newReport) => {
-    setReceivingReports(prev => [newReport, ...prev]);
-
-    // Update perpetual inventory & add lots
-    setInventory(prevInv => {
-      return prevInv.map(mat => {
-        const receivedItem = newReport.items.find(it => it.materialCode === mat.code);
-        if (!receivedItem) return mat;
-
-        const addedSec = receivedItem.secondaryQty || 0;
-        const newBalance = mat.currentBalance + addedSec;
-
-        // Add or merge lot
-        const newLot = {
-          lotNumber: receivedItem.lotNumber,
-          expiryDate: receivedItem.expiryDate,
-          qtySec: addedSec,
-          location: receivedItem.binLocation || 'Pallet Staging'
-        };
-
-        return {
-          ...mat,
-          currentBalance: newBalance,
-          lots: [newLot, ...(mat.lots || [])]
-        };
-      });
-    });
-
-    recordAudit(
-      "INBOUND_RECEIVING",
-      `Received PO/DR ${newReport.poNo} from ${newReport.supplier} (Report: ${newReport.reportNo}, Amount: ₱${newReport.totalPaid.toLocaleString()})`
-    );
-
-    showToast(`Shipment ${newReport.reportNo} received & inventory updated!`);
+  const handleSaveReceiving = (report) => {
+    setReceivingReports(prev => [report, ...prev]);
+    setInventory(prev => prev.map(invItem => {
+      const receivedItem = report.items.find(i => i.materialCode === invItem.code);
+      if (receivedItem) {
+        const netAdded = receivedItem.secondaryQty - (receivedItem.qtyDamaged * receivedItem.conversionFactor);
+        return { ...invItem, currentBalance: invItem.currentBalance + netAdded };
+      }
+      return invItem;
+    }));
+    recordAudit('INBOUND_RECEIVING', `Logged Form-REC-001 ${report.reportNo} from ${report.supplier} valued at ₱${report.totalPaid.toLocaleString()}`);
     setActiveTab('dashboard');
   };
 
-  // WORKFLOW 2: Stock Withdrawal Save
-  const handleSaveWithdrawal = (newWithdrawal) => {
-    setWithdrawals(prev => [newWithdrawal, ...prev]);
-
-    // Deduct from perpetual inventory and lot balances
-    setInventory(prevInv => {
-      return prevInv.map(mat => {
-        const issuedItem = newWithdrawal.items.find(it => it.materialCode === mat.code);
-        if (!issuedItem) return mat;
-
-        const deductedSec = issuedItem.qtyIssuedSec || 0;
-        const newBalance = mat.currentBalance - deductedSec;
-
-        // Deduct from lots in FEFO order
-        let remainingToDeduct = deductedSec;
-        const updatedLots = (mat.lots || []).map(lot => {
-          if (remainingToDeduct <= 0) return lot;
-          if (lot.lotNumber === issuedItem.lotNumber || !issuedItem.lotNumber) {
-            if (lot.qtySec >= remainingToDeduct) {
-              const updated = { ...lot, qtySec: lot.qtySec - remainingToDeduct };
-              remainingToDeduct = 0;
-              return updated;
-            } else {
-              remainingToDeduct -= lot.qtySec;
-              return { ...lot, qtySec: 0 };
-            }
-          }
-          return lot;
-        }).filter(l => l.qtySec > 0);
-
-        return {
-          ...mat,
-          currentBalance: newBalance,
-          lots: updatedLots
-        };
-      });
-    });
-
-    recordAudit(
-      "STOCK_OUT_ISSUANCE",
-      `Issued Slip ${newWithdrawal.slipNo} to ${newWithdrawal.requestingEntity} (${newWithdrawal.items.length} materials)`
-    );
-
-    showToast(`Withdrawal Slip ${newWithdrawal.slipNo} authorized & stock deducted!`);
-    setActiveTab('dashboard');
+  const handleSaveWithdrawal = (slip) => {
+    setWithdrawals(prev => [slip, ...prev]);
+    setInventory(prev => prev.map(invItem => {
+      const issuedItem = slip.items.find(i => i.materialCode === invItem.code);
+      if (issuedItem) {
+        return { ...invItem, currentBalance: invItem.currentBalance - issuedItem.qtyIssuedSec };
+      }
+      return invItem;
+    }));
+    recordAudit('STOCK_OUT_ISSUANCE', `Logged Form-WAR-001 ${slip.slipNo} for ${slip.requestingEntity}`);
   };
 
-  // WORKFLOW 3: Batch Order Save (Jade or Mariejohn)
   const handleSaveBatchOrder = (newOrder) => {
     setBatchOrders(prev => [newOrder, ...prev]);
-
-    recordAudit(
-      "OUTLET_ORDER_INTAKE",
-      `Intake batch order ${newOrder.orderId} for ${newOrder.outletName}: ${newOrder.requestedQtyPcs} pcs of ${newOrder.recipeName}`
-    );
-
-    showToast(`Order ${newOrder.orderId} queued for Romeo Malusay!`);
+    recordAudit('BATCH_REQUISITION', `Created Form-PRO-001 for ${newOrder.recipeName} to ${newOrder.outletName}`);
   };
 
-  // WORKFLOW 4: Update Batch Order Status (Romeo Malusay)
-  const handleUpdateOrderStatus = (orderId, newStatus, tagId = null, batchedKg = 0) => {
+  const handleUpdateOrderStatus = (orderId, newStatus, batchTagId = null, actualBatchedKg = 0) => {
     setBatchOrders(prev => prev.map(order => {
-      if (order.orderId !== orderId) return order;
-
-      const nowStr = new Date().toISOString().slice(0, 19).replace('T', ' ');
-
-      if (newStatus === 'BATCHED_KITTED') {
-        return {
-          ...order,
-          status: 'BATCHED_KITTED',
-          batchTagId: tagId || order.batchTagId || `KIT-${Date.now().toString().slice(-6)}`,
-          actualBatchedKg: batchedKg || ((order.requestedQtyPcs * 0.04) + 5),
+      if (order.orderId === orderId) {
+        return { 
+          ...order, 
+          status: newStatus,
+          batchTagId: batchTagId || order.batchTagId,
+          actualBatchedKg: actualBatchedKg || order.actualBatchedKg,
           actualBatchedUnits: order.requestedQtyPcs,
-          batchedAt: nowStr,
-          batchedBy: "Romeo B. Malusay",
-          scaleUsed: "Bench Scale #1 (Govt Seal #798073) Valid",
-          sifter40MeshChecked: true
-        };
-      } else if (newStatus === 'RELEASED') {
-        return {
-          ...order,
-          status: 'RELEASED',
-          releasedAt: nowStr,
-          releasedTo: order.outletName.includes('Pan de Verde') ? "Othniel Tilan (Pan de Verde Driver)" : "Roberto S. Blase (Laurice Driver)"
-        };
-      }
-      return { ...order, status: newStatus };
-    }));
-
-    recordAudit(
-      newStatus === 'BATCHED_KITTED' ? "BATCH_KITTED" : "BATCH_RELEASED",
-      `Batch order ${orderId} marked as ${newStatus} by ${currentRole}`
-    );
-
-    showToast(`Order ${orderId} updated to ${newStatus}!`);
-  };
-
-  // WORKFLOW 5: Collective Release All Completed
-  const handleBulkReleaseOrders = () => {
-    const nowStr = new Date().toISOString().slice(0, 19).replace('T', ' ');
-    const count = batchOrders.filter(o => o.status === 'BATCHED_KITTED').length;
-    if (count === 0) return;
-
-    setBatchOrders(prev => prev.map(order => {
-      if (order.status === 'BATCHED_KITTED') {
-        return {
-          ...order,
-          status: 'RELEASED',
-          releasedAt: nowStr,
-          releasedTo: order.outletName.includes('Pan de Verde') ? "Othniel Tilan (Pan de Verde Driver)" : "Roberto S. Blase (Laurice Driver)"
+          batchedAt: newStatus === 'BATCHED_KITTED' ? new Date().toLocaleTimeString() : order.batchedAt,
+          batchedBy: newStatus === 'BATCHED_KITTED' ? currentRole : order.batchedBy,
+          releasedAt: newStatus === 'RELEASED' ? new Date().toLocaleTimeString() : order.releasedAt,
         };
       }
       return order;
     }));
 
-    recordAudit(
-      "BULK_BATCH_RELEASE",
-      `Romeo Malusay collectively marked ${count} recipe mix batches as RELEASED to outlet logistics.`
-    );
-
-    showToast(`Successfully released all ${count} completed batches to outlet logistics!`);
+    if (newStatus === 'BATCHED_KITTED') {
+      recordAudit('BATCH_KITTED', `Certified Form-ING-001 scaling for Order ${orderId}`);
+    } else if (newStatus === 'RELEASED') {
+      recordAudit('BATCH_RELEASED', `Released batch for Order ${orderId} to outlet driver`);
+    }
   };
 
-  // WORKFLOW 6: Physical Adjustment
-  const handleSaveAdjustment = (newAdj) => {
-    setAdjustments(prev => [newAdj, ...prev]);
+  const handleBulkReleaseOrders = () => {
+    setBatchOrders(prev => prev.map(order => {
+      if (order.status === 'BATCHED_KITTED') {
+        return { ...order, status: 'RELEASED', releasedAt: new Date().toLocaleTimeString() };
+      }
+      return order;
+    }));
+    recordAudit('BULK_BATCH_RELEASE', `Collectively released all ready kitted batches to outlets`);
+  };
 
-    // Update inventory
-    setInventory(prevInv => {
-      return prevInv.map(mat => {
-        if (mat.code !== newAdj.materialCode) return mat;
-        const diff = newAdj.type.includes('OUT') ? -newAdj.qtySec : newAdj.qtySec;
-        return {
-          ...mat,
-          currentBalance: mat.currentBalance + diff
+  const handleSaveAdjustment = (adj) => {
+    setAdjustments(prev => [adj, ...prev]);
+    setInventory(prev => prev.map(invItem => {
+      if (invItem.code === adj.materialCode) {
+        const isOut = adj.type.includes('OUT');
+        return { 
+          ...invItem, 
+          currentBalance: invItem.currentBalance + (isOut ? -adj.qtySec : adj.qtySec) 
         };
-      });
-    });
-
-    recordAudit(
-      "INVENTORY_ADJUSTMENT",
-      `${newAdj.type} for ${newAdj.materialCode}: ${newAdj.qtySec} ${newAdj.uom} (${newAdj.reason})`
-    );
-
-    showToast(`Adjustment ${newAdj.id} committed to book balance!`);
+      }
+      return invItem;
+    }));
+    recordAudit('INVENTORY_ADJUSTMENT', `Logged ${adj.type} for ${adj.materialCode} (${adj.qtySec} ${adj.uom})`);
   };
 
-  // WORKFLOW 7: Quarantine
-  const handleSaveQuarantine = (newNcr) => {
-    setQuarantineList(prev => [newNcr, ...prev]);
-
-    recordAudit(
-      "QUARANTINE_NCR_FILED",
-      `Form-NCR-001 filed: ${newNcr.ncrNo} - ${newNcr.itemDescription} (${newNcr.reason})`
-    );
-
-    showToast(`NCR ${newNcr.ncrNo} logged into exterior quarantine cabinet!`);
+  const handleSaveQuarantine = (ncr) => {
+    setQuarantineList(prev => [ncr, ...prev]);
+    recordAudit('QUARANTINE_NCR', `Filed Form-NCR-001 ${ncr.ncrNo} for ${ncr.itemDescription}`);
   };
 
-  // Quick Action from Dashboard
-  const handleQuickAction = (action, item = null) => {
+  const handleQuickAction = (tab, item = null) => {
     setPrefilledItem(item);
-    if (action === 'receiving') setActiveTab('receiving');
-    if (action === 'issuance') setActiveTab('issuance');
+    setActiveTab(tab);
   };
 
-  // Reset Demo Data
   const handleResetData = () => {
-    if (window.confirm("Reset all WMS data back to authentic initial system seeds?")) {
-      localStorage.clear();
+    if (window.confirm("Are you sure you want to reset all data to factory seeds?")) {
       setInventory(MASTER_MATERIALS);
       setReceivingReports(INITIAL_RECEIVING_REPORTS);
       setWithdrawals(INITIAL_WITHDRAWALS);
       setBatchOrders(INITIAL_BATCHING_ORDERS);
-      setAdjustments(INITIAL_ADJUSTMENTS);
       setQuarantineList(INITIAL_QUARANTINE);
+      setAdjustments(INITIAL_ADJUSTMENTS);
       setAuditLogs(INITIAL_AUDIT_LOGS);
-      showToast("Data restored to factory seeds!");
+      setActiveTab('dashboard');
     }
   };
 
-  // JSON Export
   const handleExportJson = () => {
-    const backup = {
-      system: "JJB Warehouse Inventory System v4.2",
-      facility: "Indangan Central Manufacturing Plant (LTO #3000013388488)",
-      exportedAt: new Date().toISOString(),
-      inventory,
-      receivingReports,
-      withdrawals,
-      batchOrders,
-      adjustments,
-      quarantineList,
-      auditLogs
-    };
-
-    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backup, null, 2));
-    const downloadAnchor = document.createElement('a');
-    downloadAnchor.setAttribute("href", dataStr);
-    downloadAnchor.setAttribute("download", `JJB_WMS_BACKUP_${new Date().toISOString().slice(0, 10)}.json`);
-    document.body.appendChild(downloadAnchor);
-    downloadAnchor.click();
-    downloadAnchor.remove();
-
-    recordAudit("SYSTEM_BACKUP_EXPORT", "Exported JSON snapshot of all warehouse data");
-    showToast("System backup downloaded!");
+    const data = { inventory, receivingReports, withdrawals, batchOrders, quarantineList, adjustments, auditLogs };
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `JJB_Backup_${new Date().toISOString().slice(0,10)}.json`;
+    a.click();
   };
 
-  // Counts
-  const lowStockCount = inventory.filter(i => i.currentBalance <= i.threshold).length;
-  const pendingBatchCount = batchOrders.filter(b => b.status === 'PENDING_BATCHING').length;
-
   return (
-    <div className="min-h-screen bg-[#FAF6EE] text-[#2A1B2E] font-sans flex flex-col relative antialiased selection:bg-[#C8963E] selection:text-white">
-      {/* Toast Alert Banner */}
-      {toastMessage && (
-        <div className="fixed top-4 right-4 z-50 bg-[#1E7A3E] text-white text-xs px-4 py-3 rounded-xl shadow-2xl flex items-center gap-2 border border-green-300 animate-bounce">
-          <CheckCircle2 size={18} />
-          <span className="font-bold tracking-wide">{toastMessage}</span>
-          <button onClick={() => setToastMessage(null)} className="ml-3 hover:opacity-75 font-bold">✕</button>
-        </div>
-      )}
-
-      {/* Main Corporate Header & Tab Navigation */}
-      <Header
+    <div className="min-h-screen bg-[#FAF6EE] text-[#2A1B2E] font-sans flex flex-col">
+      <Header 
         currentRole={currentRole}
         setCurrentRole={setCurrentRole}
         activeTab={activeTab}
@@ -360,27 +183,24 @@ export default function App() {
         setIsMobileMode={setIsMobileMode}
         isOffline={isOffline}
         setIsOffline={setIsOffline}
-        queueCount={0}
+        queueCount={queueCount}
         pendingBatchCount={pendingBatchCount}
         lowStockCount={lowStockCount}
         onQuickEod={() => setActiveTab('eod')}
       />
 
-      {/* Main View Container */}
       <main className="flex-1 p-4 md:p-6 max-w-7xl mx-auto w-full">
-        {/* TAB 1: EXECUTIVE COCKPIT & LIVE FEFO */}
         {activeTab === 'dashboard' && (
-          <ExecutiveDashboard
+          <ExecutiveDashboard 
             inventory={inventory}
             isMobileMode={isMobileMode}
             onQuickAction={handleQuickAction}
             storageRooms={STORAGE_ROOMS}
           />
         )}
-
-        {/* TAB 2: INBOUND RECEIVING */}
+        
         {activeTab === 'receiving' && (
-          <ReceivingModule
+          <ReceivingModule 
             inventory={inventory}
             onSaveReceiving={handleSaveReceiving}
             receivingReports={receivingReports}
@@ -390,9 +210,8 @@ export default function App() {
           />
         )}
 
-        {/* TAB 3: STOCK ISSUANCE */}
         {activeTab === 'issuance' && (
-          <IssuanceModule
+          <IssuanceModule 
             inventory={inventory}
             onSaveWithdrawal={handleSaveWithdrawal}
             withdrawals={withdrawals}
@@ -402,9 +221,8 @@ export default function App() {
           />
         )}
 
-        {/* TAB 4: OUTLET KITTING & BATCHING (ROMEO MALUSAY & ORDER INTAKE) */}
         {activeTab === 'batching' && (
-          <BatchingWorkbench
+          <BatchingWorkbench 
             batchOrders={batchOrders}
             onSaveBatchOrder={handleSaveBatchOrder}
             onUpdateOrderStatus={handleUpdateOrderStatus}
@@ -417,9 +235,8 @@ export default function App() {
           />
         )}
 
-        {/* TAB 5: ADJUSTMENTS & QUARANTINE */}
         {activeTab === 'adjustments' && (
-          <AdjustmentsModule
+          <AdjustmentsModule 
             inventory={inventory}
             adjustments={adjustments}
             quarantineList={quarantineList}
@@ -429,9 +246,8 @@ export default function App() {
           />
         )}
 
-        {/* TAB 6: AUTOMATED END-OF-DAY (EOD) REPORT */}
         {activeTab === 'eod' && (
-          <EodReportModule
+          <EodReportModule 
             receivingReports={receivingReports}
             withdrawals={withdrawals}
             batchOrders={batchOrders}
@@ -442,9 +258,8 @@ export default function App() {
           />
         )}
 
-        {/* TAB 7: IMMUTABLE AUDIT TRAIL */}
         {activeTab === 'audit' && (
-          <AuditTrailModule
+          <AuditTrailModule 
             auditLogs={auditLogs}
             onResetData={handleResetData}
             onExportJson={handleExportJson}
@@ -452,19 +267,9 @@ export default function App() {
         )}
       </main>
 
-      {/* Corporate Operational Footer */}
-      <footer className="bg-[#240e32] text-white py-4 px-6 text-center text-xs border-t border-[#C8963E]/30 mt-auto">
-        <div className="max-w-4xl mx-auto space-y-1">
-          <p className="font-semibold text-gray-200">
-            Jang-Jang Bakeshop &amp; Kingdom Confectionary Business Lines · Manual of Operations Rev. 4.0 WMS Engine
-          </p>
-          <p className="text-[#E5C585] text-[11px]">
-            Indangan Subject Site FDA LTO No. 3000013388488 · Sasa Site LTO No. 3000002291335 · Davao City, Philippines
-          </p>
-          <p className="text-gray-400 text-[10px]">
-            Designed for Jade Q. Dela Cruz (Receiving &amp; Withdrawals) · Romeo B. Malusay (Batching &amp; Releasing) · Mariejohn F. Tacuban (Inventory Reconciliation)
-          </p>
-        </div>
+      <footer className="bg-[#3D1C52] text-white py-4 px-6 text-center text-xs border-t border-[#C8963E]/30 mt-auto">
+        <p>Jang-Jang Bakeshop & Kingdom Confectionary Business Lines · Manual of Operations Rev. 4.0 WMS Engine</p>
+        <p className="text-[#E5C585] mt-1">Deployed on Cloudflare Pages & Google Apps Script Queue-First Architecture (`₱0.00 / Month` Stack)</p>
       </footer>
     </div>
   );
