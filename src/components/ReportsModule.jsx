@@ -5,11 +5,11 @@ import {
 } from 'lucide-react';
 
 export default function ReportsModule({ 
-  inventory,
-  receivingReports, 
-  withdrawals, 
-  batchOrders, 
-  adjustments,
+  inventory = [],
+  receivingReports = [], 
+  withdrawals = [], 
+  batchOrders = [], 
+  adjustments = [],
   onImportInventoryCsv
 }) {
   const [activeView, setActiveView] = useState('reports'); // 'reports' | 'po_generator'
@@ -18,7 +18,7 @@ export default function ReportsModule({
   // PURCHASE ORDER GENERATOR STATE
   const [poNumber, setPoNumber] = useState(`PO-${new Date().toISOString().slice(0, 10).replace(/-/g, '')}-001`);
   const [selectedSupplierFilter, setSelectedSupplierFilter] = useState('ALL');
-  const [poNotes, setPoNotes] = useState('Mandatory Requirement: All food-contact packaging must include CoA/CoC; Chilled Buttercup blocks must arrive ≤ 0°C with individual cellophane expiry stickers.');
+  const [poNotes, setPoNotes] = useState('Mandatory Requirement: All food-contact packaging must include CoA/CoC; Chilled Buttercup blocks must arrive <= 0°C with individual cellophane expiry stickers.');
   const [poItems, setPoItems] = useState([]);
   const [newSkuToAdd, setNewSkuToAdd] = useState(inventory[0]?.code || 'RM-FLR-001');
 
@@ -28,7 +28,7 @@ export default function ReportsModule({
     const initialPoLines = (lowItems.length > 0 ? lowItems : inventory.slice(0, 5)).map(item => {
       const currentBulk = item.currentBalance / (item.conversionFactor || 1);
       const thresholdBulk = item.threshold / (item.conversionFactor || 1);
-      const recommendedOrderBulk = Math.max(Math.ceil(thresholdBulk * 2 - currentBulk), 5);
+      const recommendedOrderBulk = Math.max(Math.ceil((thresholdBulk * 2) - currentBulk), 5);
       return {
         code: item.code,
         name: item.name,
@@ -39,7 +39,7 @@ export default function ReportsModule({
         secondaryUom: item.secondaryUom,
         orderQtyPrimary: recommendedOrderBulk,
         primaryUom: item.primaryUom,
-        conversionFactor: item.conversionFactor,
+        conversionFactor: item.conversionFactor || 1,
         unitCostPhp: item.unitCost || 1000
       };
     });
@@ -68,7 +68,7 @@ export default function ReportsModule({
     start.setHours(0, 0, 0, 0);
     
     const end = new Date(now);
-    end.setFullYear(end.getFullYear() + 1);
+    end.setFullYear(end.getFullYear() + 1); // Include any upcoming scheduled dates
     return { start, end };
   };
 
@@ -83,10 +83,11 @@ export default function ReportsModule({
   const filteredReceiving = useMemo(() => receivingReports.filter(r => filterByDate(r.date)), [receivingReports, timeframe]);
   const filteredWithdrawals = useMemo(() => withdrawals.filter(w => filterByDate(w.date)), [withdrawals, timeframe]);
   const filteredBatchOrders = useMemo(() => batchOrders.filter(b => filterByDate(b.requestDate)), [batchOrders, timeframe]);
+  const filteredAdjustments = useMemo(() => adjustments.filter(a => filterByDate(a.date)), [adjustments, timeframe]);
 
   // CSV Export Helper
   const downloadCSV = (data, headers, filename) => {
-    if (data.length === 0) return alert("No records found for this timeframe.");
+    if (!data || data.length === 0) return alert("No records found for this timeframe.");
     const csvRows = [headers.join(',')];
     for (const row of data) {
       const values = headers.map(header => `"${String(row[header] ?? '').replace(/"/g, '""')}"`);
@@ -101,7 +102,7 @@ export default function ReportsModule({
   };
 
   const handleExportReceiving = () => {
-    const flat = filteredReceiving.flatMap(r => r.items.map(i => ({
+    const flat = filteredReceiving.flatMap(r => (r.items || []).map(i => ({
       ReportNo: r.reportNo, Date: r.date, PO_DR: r.poNo, Supplier: r.supplier,
       MaterialCode: i.materialCode, ItemName: i.name, PrimaryQty: i.primaryQty,
       PrimaryUoM: i.primaryUom, NetQty: i.secondaryQty, NetUoM: i.secondaryUom, TotalAmountPHP: i.totalAmount
@@ -110,7 +111,7 @@ export default function ReportsModule({
   };
 
   const handleExportWithdrawals = () => {
-    const flat = filteredWithdrawals.flatMap(w => w.items.map(i => ({
+    const flat = filteredWithdrawals.flatMap(w => (w.items || []).map(i => ({
       SlipNo: w.slipNo, Date: w.date, TargetLine: w.requestingEntity, Purpose: w.purpose,
       MaterialCode: i.materialCode, ItemName: i.name, NetQtyIssued: i.qtyIssuedSec, UoM: i.secondaryUom, Lot: i.lotNumber, Status: w.status
     })));
@@ -120,10 +121,12 @@ export default function ReportsModule({
   const handleExportBatching = () => {
     const flat = filteredBatchOrders.map(b => ({
       OrderID: b.orderId, Date: b.requestDate, Outlet: b.outletName, Recipe: b.recipeName,
-      KitsOrdered: b.batchMultiplier, YieldPcs: b.requestedQtyPcs, BulkRequested: b.bulkMaterialsRequested ? 'YES' : 'NO',
-      BulkApprovedByJade: b.bulkMaterialsApprovedByJade ? 'YES' : 'NO', Status: b.status, BatchTag: b.batchTagId || 'N/A', ActualWeightKg: b.actualBatchedKg || 0
+      KitsOrdered: b.batchMultiplier, YieldPcs: b.requestedQtyPcs,
+      BulkRequisitionStatus: b.bulkRequisitionStatus || 'NOT_REQUESTED',
+      LinkedWithdrawalSlip: b.linkedWithdrawalSlipNo || 'N/A',
+      Status: b.status, BatchTag: b.batchTagId || 'N/A', ActualWeightKg: b.actualBatchedKg || 0
     }));
-    downloadCSV(flat, ['OrderID', 'Date', 'Outlet', 'Recipe', 'KitsOrdered', 'YieldPcs', 'BulkRequested', 'BulkApprovedByJade', 'Status', 'BatchTag', 'ActualWeightKg'], 'JJB_Batching_Kitting_Report');
+    downloadCSV(flat, ['OrderID', 'Date', 'Outlet', 'Recipe', 'KitsOrdered', 'YieldPcs', 'BulkRequisitionStatus', 'LinkedWithdrawalSlip', 'Status', 'BatchTag', 'ActualWeightKg'], 'JJB_Batching_Kitting_Report');
   };
 
   // CSV Import Handler for Live Inventory Updates
@@ -139,7 +142,11 @@ export default function ReportsModule({
       for (let i = 1; i < lines.length; i++) {
         const cols = lines[i].split(',').map(c => c.replace(/^"|"$/g, '').trim());
         if (cols[0] && !isNaN(parseFloat(cols[1]))) {
-          updates.push({ code: cols[0], newBalanceSec: parseFloat(cols[1]) });
+          updates.push({
+            code: cols[0],
+            newBalanceSec: parseFloat(cols[1]),
+            unitCost: cols[2] && !isNaN(parseFloat(cols[2])) ? parseFloat(cols[2]) : undefined
+          });
         }
       }
       if (updates.length > 0 && onImportInventoryCsv) {
@@ -150,6 +157,7 @@ export default function ReportsModule({
       }
     };
     reader.readAsText(file);
+    e.target.value = '';
   };
 
   // PO Generator Helpers
@@ -159,10 +167,7 @@ export default function ReportsModule({
   }, [poItems]);
 
   const displayedPoItems = poItems.filter(i => selectedSupplierFilter === 'ALL' || i.supplier === selectedSupplierFilter);
-  
-  const subtotal = displayedPoItems.reduce((sum, i) => sum + (i.orderQtyPrimary * i.unitCostPhp), 0);
-  const vatAmount = subtotal * 0.12;
-  const totalPoAmountPhp = subtotal + vatAmount;
+  const totalPoAmountPhp = displayedPoItems.reduce((sum, i) => sum + (i.orderQtyPrimary * i.unitCostPhp), 0);
 
   const handleAddPoItem = () => {
     const mat = inventory.find(m => m.code === newSkuToAdd);
@@ -183,7 +188,7 @@ export default function ReportsModule({
         secondaryUom: mat.secondaryUom,
         orderQtyPrimary: 10,
         primaryUom: mat.primaryUom,
-        conversionFactor: mat.conversionFactor,
+        conversionFactor: mat.conversionFactor || 1,
         unitCostPhp: mat.unitCost || 1000
       }
     ]);
@@ -233,7 +238,7 @@ export default function ReportsModule({
               activeView === 'reports' ? 'bg-[#3D1C52] text-white shadow-sm' : 'text-gray-600 hover:text-gray-900'
             }`}
           >
-            <BarChart3 size={14} /> Operational Reports
+            <BarChart3 size={14} /> Operational Reports (Week/Month/Quarter/Year)
           </button>
           <button
             onClick={() => setActiveView('po_generator')}
@@ -241,12 +246,12 @@ export default function ReportsModule({
               activeView === 'po_generator' ? 'bg-[#C8963E] text-[#240e32] shadow-sm' : 'text-gray-600 hover:text-gray-900'
             }`}
           >
-            <ShoppingCart size={14} /> PO Generator ({poItems.length})
+            <ShoppingCart size={14} /> Purchase Order (PO) Generator ({poItems.length})
           </button>
         </div>
       </div>
 
-      {/* VIEW 1: MULTI-PERIOD REPORTS */}
+      {/* VIEW 1: MULTI-PERIOD REPORTS & CSV IMPORT/EXPORT */}
       {activeView === 'reports' && (
         <div className="space-y-6">
           <div className="bg-white p-4 rounded-xl border border-[#E2D1B8] shadow-sm flex flex-wrap gap-4 items-center justify-between print:hidden">
@@ -259,10 +264,10 @@ export default function ReportsModule({
                 className="p-2 border rounded-lg text-xs font-bold bg-[#FAF6EE] focus:outline-none focus:ring-2 focus:ring-[#C8963E]"
               >
                 <option value="WEEK">This Week</option>
-                <option value="MONTH">This Month</option>
-                <option value="QUARTER">This Quarter</option>
-                <option value="YEAR">This Year</option>
-                <option value="ALL">All Historical Records</option>
+                <option value="MONTH">This Month (Nov 2026+)</option>
+                <option value="QUARTER">This Quarter (Q4 2026)</option>
+                <option value="YEAR">This Year (2026)</option>
+                <option value="ALL">All Historical & Active Records</option>
               </select>
             </div>
 
@@ -306,7 +311,7 @@ export default function ReportsModule({
                     {filteredReceiving.length === 0 ? (
                       <tr><td colSpan="6" className="p-4 text-center text-gray-500">No records for this timeframe.</td></tr>
                     ) : (
-                      filteredReceiving.map(r => r.items.map((i, idx) => (
+                      filteredReceiving.map(r => (r.items || []).map((i, idx) => (
                         <tr key={`${r.reportNo}-${idx}`}>
                           <td className="p-3">{r.date}</td>
                           <td className="p-3 font-mono font-bold">{r.reportNo} ({r.poNo})</td>
@@ -348,7 +353,7 @@ export default function ReportsModule({
                     {filteredWithdrawals.length === 0 ? (
                       <tr><td colSpan="6" className="p-4 text-center text-gray-500">No records for this timeframe.</td></tr>
                     ) : (
-                      filteredWithdrawals.map(w => w.items.map((i, idx) => (
+                      filteredWithdrawals.map(w => (w.items || []).map((i, idx) => (
                         <tr key={`${w.slipNo}-${idx}`}>
                           <td className="p-3">{w.date}</td>
                           <td className="p-3 font-mono font-bold">{w.slipNo}</td>
@@ -382,13 +387,14 @@ export default function ReportsModule({
                       <th className="p-3">Order ID</th>
                       <th className="p-3">Target Outlet</th>
                       <th className="p-3">Recipe & Kit Count</th>
+                      <th className="p-3">Upstream Bulk Slip</th>
                       <th className="p-3 text-right">Scaled Weight</th>
                       <th className="p-3 text-center">Status</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200">
                     {filteredBatchOrders.length === 0 ? (
-                      <tr><td colSpan="6" className="p-4 text-center text-gray-500">No records for this timeframe.</td></tr>
+                      <tr><td colSpan="7" className="p-4 text-center text-gray-500">No records for this timeframe.</td></tr>
                     ) : (
                       filteredBatchOrders.map(b => (
                         <tr key={b.orderId}>
@@ -396,6 +402,7 @@ export default function ReportsModule({
                           <td className="p-3 font-mono font-bold">{b.orderId}</td>
                           <td className="p-3 font-semibold text-[#C8963E]">{b.outletName}</td>
                           <td className="p-3">{b.recipeName} ({b.batchMultiplier} Kits)</td>
+                          <td className="p-3 font-mono text-[11px]">{b.linkedWithdrawalSlipNo || 'N/A'}</td>
                           <td className="p-3 text-right font-mono font-bold">{b.actualBatchedKg ? `${b.actualBatchedKg} kg` : 'Pending'}</td>
                           <td className="p-3 text-center">
                             <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-gray-100">{b.status}</span>
@@ -411,9 +418,10 @@ export default function ReportsModule({
         </div>
       )}
 
-      {/* VIEW 2: PURCHASE ORDER GENERATOR */}
+      {/* VIEW 2: AUTOMATED PURCHASE ORDER (PO) GENERATOR */}
       {activeView === 'po_generator' && (
         <div className="space-y-6">
+          {/* Controls Bar */}
           <div className="bg-white p-4 rounded-xl border border-[#E2D1B8] shadow-sm flex flex-wrap gap-3 items-end justify-between print:hidden">
             <div className="flex flex-wrap gap-3 items-end text-xs">
               <div>
@@ -457,7 +465,7 @@ export default function ReportsModule({
                   onClick={handleAddPoItem}
                   className="bg-[#5B2E7A] hover:bg-[#3D1C52] text-white font-bold px-3 py-2 rounded flex items-center gap-1"
                 >
-                  <Plus size={14} /> Add
+                  <Plus size={14} /> Add Item
                 </button>
               </div>
             </div>
@@ -473,16 +481,17 @@ export default function ReportsModule({
                 onClick={() => window.print()}
                 className="bg-[#3D1C52] hover:bg-[#240e32] text-white text-xs font-bold px-4 py-2 rounded-lg shadow flex items-center gap-1.5"
               >
-                <Printer size={14} /> Print PO (PDF)
+                <Printer size={14} /> Print / Save Official PO PDF
               </button>
             </div>
           </div>
 
+          {/* Printable Purchase Order Document */}
           <div className="bg-white rounded-2xl border-2 border-[#5B2E7A] p-6 md:p-8 shadow-lg space-y-6">
             <div className="border-b-2 border-[#5B2E7A] pb-4 flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4">
               <div>
                 <p className="text-[10px] font-bold tracking-widest text-[#C8963E] uppercase">
-                  OFFICIAL PROCUREMENT REQUISITION · SOP-PUR-002
+                  OFFICIAL PROCUREMENT REQUISITION · SOP-PUR-002 (`Form-PUR-002`)
                 </p>
                 <h1 className="font-serif font-bold text-2xl text-[#3D1C52]">
                   PURCHASE ORDER DOCUMENT
@@ -591,38 +600,35 @@ export default function ReportsModule({
                 />
               </div>
 
-              <div className="text-right space-y-1 bg-[#FAF6EE] p-4 rounded-xl border border-[#C8963E] min-w-[250px]">
-                <div className="flex justify-between text-xs text-gray-600">
-                  <span>Subtotal:</span>
-                  <span className="font-mono">₱{subtotal.toLocaleString('en-PH', { minimumFractionDigits: 2 })}</span>
-                </div>
-                <div className="flex justify-between text-xs text-gray-600">
-                  <span>VAT (12%):</span>
-                  <span className="font-mono">₱{vatAmount.toLocaleString('en-PH', { minimumFractionDigits: 2 })}</span>
-                </div>
-                <div className="flex justify-between text-sm font-bold text-[#3D1C52] pt-2 border-t border-gray-300">
-                  <span>GRAND TOTAL:</span>
-                  <span className="font-mono">₱{totalPoAmountPhp.toLocaleString('en-PH', { minimumFractionDigits: 2 })}</span>
-                </div>
+              <div className="text-right space-y-1 bg-[#FAF6EE] p-4 rounded-xl border border-[#C8963E] min-w-[240px]">
+                <p className="text-xs text-gray-500">Total Authorized PO Amount:</p>
+                <p className="text-2xl font-serif font-bold text-[#1E7A3E]">
+                  ₱{totalPoAmountPhp.toLocaleString('en-PH', { minimumFractionDigits: 2 })}
+                </p>
               </div>
             </div>
 
-            <div className="pt-8 grid grid-cols-2 md:grid-cols-4 gap-4 text-xs">
-              <div className="border-t border-gray-400 pt-2 text-center">
-                <p className="font-bold text-[#3D1C52]">Mariejohn F. Tacuban</p>
-                <p className="text-[10px] text-gray-500">Prepared By (Purchasing)</p>
+            {/* Sign-off Blocks */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-4 border-t-2 border-[#5B2E7A] text-xs">
+              <div className="border rounded-lg p-3 bg-gray-50">
+                <p className="text-[10px] font-bold uppercase text-gray-500">Prepared By (Warehouse):</p>
+                <p className="font-bold text-[#3D1C52] mt-1">Jade Q. Dela Cruz</p>
+                <p className="text-[10px] text-gray-400 mt-2">Warehouse Supervisor</p>
               </div>
-              <div className="border-t border-gray-400 pt-2 text-center">
-                <p className="font-bold text-[#3D1C52]">Grace P. Suico</p>
-                <p className="text-[10px] text-gray-500">QA Review (FSCO 2)</p>
+              <div className="border rounded-lg p-3 bg-gray-50">
+                <p className="text-[10px] font-bold uppercase text-gray-500">Canvassed & Reconciled:</p>
+                <p className="font-bold text-[#3D1C52] mt-1">Mariejohn F. Tacuban</p>
+                <p className="text-[10px] text-gray-400 mt-2">Inventory & Purchasing Manager</p>
               </div>
-              <div className="border-t border-gray-400 pt-2 text-center">
-                <p className="font-bold text-[#3D1C52]">Jeanifer S. Sauping</p>
-                <p className="text-[10px] text-gray-500">Finance Check</p>
+              <div className="border rounded-lg p-3 bg-gray-50">
+                <p className="text-[10px] font-bold uppercase text-gray-500">Costing & Budget Clearance:</p>
+                <p className="font-bold text-[#3D1C52] mt-1">Jeanifer S. Sauping / M.C. Basoc</p>
+                <p className="text-[10px] text-gray-400 mt-2">Finance Directorate</p>
               </div>
-              <div className="border-t border-gray-400 pt-2 text-center">
-                <p className="font-bold text-[#3D1C52]">Angelina P. Sun</p>
-                <p className="text-[10px] text-gray-500">Executive Approval</p>
+              <div className="border rounded-lg p-3 bg-gray-50">
+                <p className="text-[10px] font-bold uppercase text-gray-500">Approved By (Executive):</p>
+                <p className="font-bold text-[#3D1C52] mt-1">Angelina P. Sun</p>
+                <p className="text-[10px] text-gray-400 mt-2">Head of Administration / COA</p>
               </div>
             </div>
           </div>
