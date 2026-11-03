@@ -194,7 +194,7 @@ export default function App() {
                 <p className="text-[11px] text-gray-400 mt-1">Below safety reorder threshold</p>
               </div>
               <div className="bg-white p-4 rounded-xl border border-[#E2D1B8] shadow-sm border-l-4 border-l-[#C0392B]">
-                <p className="text-xs text-gray-500 font-bold uppercase">Lots Expiring < 30 Days</p>
+                <p className="text-xs text-gray-500 font-bold uppercase">Lots Expiring &lt; 30 Days</p>
                 <p className="text-2xl font-bold text-[#C0392B] mt-1">1 Lot</p>
                 <p className="text-[11px] text-gray-400 mt-1">Fresh Eggs (EGG-20261013 - Nov 15)</p>
               </div>
