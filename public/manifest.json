@@ -1,0 +1,22 @@
+{
+  "name": "Jang-Jang Bakeshop Warehouse & Batch Sync System",
+  "short_name": "JJB Warehouse",
+  "description": "Enterprise Warehouse Inventory, FEFO Tracking, and Multi-Terminal Batch Kitting System for Jang-Jang Bakeshop (Indangan Plant LTO #3000013388488)",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#FAF6EE",
+  "theme_color": "#5B2E7A",
+  "icons": [
+    {
+      "src": "https://raw.githubusercontent.com/zzp-systems/jjb-systems/refs/heads/main/jjb-logo-transaparent.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "https://raw.githubusercontent.com/zzp-systems/jjb-systems/refs/heads/main/jjb-logo-transaparent.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
