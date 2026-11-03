@@ -1,12 +1,12 @@
 import React from 'react';
 import { 
   Warehouse, Scale, Truck, FileText, CheckCircle2, 
-  Wifi, WifiOff, Smartphone, Laptop, AlertOctagon, Send, BarChart3
+  Wifi, WifiOff, Smartphone, Laptop, AlertOctagon, Send, BarChart3, ShoppingCart
 } from 'lucide-react';
 
 export const ROLES = [
-  { id: "jade", name: "Jade Q. Dela Cruz", title: "Warehouse Supervisor", station: "Terminal 1 · Warehouse Office & Receiving Dock" },
-  { id: "romeo", name: "Romeo B. Malusay", title: "Ingredient Batching Preparer", station: "Terminal 2 · Dry Room Batching Workbench" },
+  { id: "jade", name: "Jade Q. Dela Cruz", title: "Warehouse Supervisor", station: "Terminal 1 · Bodega & Receiving Dock" },
+  { id: "romeo", name: "Romeo B. Malusay", title: "Ingredient Batching Preparer", station: "Terminal 2 · Dry Room Batching Partition" },
   { id: "mariejohn", name: "Mariejohn F. Tacuban", title: "Inventory & Purchasing Manager", station: "Terminal 3 · Inventory & Procurement" },
   { id: "grace", name: "Grace P. Suico", title: "FSCO 2 & QA Control Director", station: "Terminal 3 · QA & Quarantine Control" },
   { id: "angelina", name: "Angelina P. Sun", title: "Head of Administration / COA", station: "Terminal 3 · Executive Oversight" }
@@ -23,7 +23,7 @@ export default function Header({
   setIsOffline,
   queueCount,
   pendingBatchCount,
-  pendingJadeApprovalCount,
+  pendingBulkApprovalCount,
   lowStockCount,
   onQuickEod
 }) {
@@ -58,14 +58,14 @@ export default function Header({
           <div>
             <div className="flex items-center gap-2">
               <h1 className="font-serif font-bold text-base md:text-lg text-white leading-tight">
-                JJB Warehouse & Kitting OS
+                JJB Warehouse & Batch Kitting OS
               </h1>
               <span className="bg-[#C8963E] text-[#240e32] font-bold text-[10px] px-1.5 py-0.5 rounded uppercase">
-                v4.4 LIVE
+                v4.4 WMS
               </span>
             </div>
             <p className="text-[11px] text-[#E5C585]">
-              Active User: <span className="font-semibold text-white">{activeRoleObj.name}</span> ({activeRoleObj.title})
+              Active Operator: <span className="font-semibold text-white">{activeRoleObj.name}</span> ({activeRoleObj.title})
             </p>
           </div>
         </div>
@@ -78,17 +78,27 @@ export default function Header({
             }`}
           >
             {isMobileMode ? <Smartphone size={13} /> : <Laptop size={13} />}
-            <span className="hidden sm:inline">{isMobileMode ? "Tablet Mode" : "Desktop Mode"}</span>
+            <span className="hidden sm:inline">{isMobileMode ? "Tablet / Phone UI" : "Desktop UI"}</span>
           </button>
 
           <button
             onClick={() => setIsOffline(!isOffline)}
             className={`px-2.5 py-1.5 rounded text-xs font-semibold flex items-center gap-1.5 transition border ${
-              isOffline ? 'bg-[#C0392B] text-white border-red-400 animate-pulse' : 'bg-[#1E7A3E] text-white border-green-500'
+              isOffline
+                ? 'bg-[#C0392B] text-white border-red-400 animate-pulse'
+                : queueCount > 0
+                ? 'bg-[#D68910] text-white border-amber-400 animate-pulse'
+                : 'bg-[#1E7A3E] text-white border-green-500'
             }`}
           >
             {isOffline ? <WifiOff size={13} /> : <Wifi size={13} />}
-            <span>{isOffline ? "OFFLINE — LOCAL QUEUE" : queueCount > 0 ? `ONLINE — QUEUED (${queueCount})` : "ONLINE — SYNCED"}</span>
+            <span>
+              {isOffline 
+                ? `OFFLINE — LOCAL QUEUE (${queueCount})` 
+                : queueCount > 0 
+                ? `ONLINE — QUEUED (${queueCount})` 
+                : "ONLINE — SYNCED"}
+            </span>
           </button>
 
           <div className="flex items-center bg-[#240e32] border border-[#C8963E]/60 rounded px-2 py-1">
@@ -100,7 +110,7 @@ export default function Header({
             >
               {ROLES.map(r => (
                 <option key={r.id} value={r.name} className="bg-[#3D1C52] text-white">
-                  {r.name} · {r.title}
+                  {r.name} ({r.station.split('·')[0].trim()})
                 </option>
               ))}
             </select>
@@ -120,10 +130,10 @@ export default function Header({
         {[
           { id: 'dashboard', label: '1. Live FEFO Inventory', icon: Warehouse, badge: lowStockCount > 0 ? `${lowStockCount} Low` : null, badgeColor: 'bg-[#D68910]' },
           { id: 'receiving', label: '2. Inbound Receiving', icon: Truck },
-          { id: 'issuance', label: '3. Stock Release & Issuance', icon: FileText, badge: pendingJadeApprovalCount > 0 ? `${pendingJadeApprovalCount} Pull Req` : null, badgeColor: 'bg-[#C0392B]' },
-          { id: 'batching', label: '4. Outlet Kitting & Batching', icon: Scale, badge: pendingBatchCount > 0 ? `${pendingBatchCount} Pending` : null, badgeColor: 'bg-[#C8963E]' },
+          { id: 'issuance', label: '3. Stock Release (Jade)', icon: FileText, badge: pendingBulkApprovalCount > 0 ? `${pendingBulkApprovalCount} Bulk Req` : null, badgeColor: 'bg-[#C0392B]' },
+          { id: 'batching', label: '4. Batching & Kitting (Romeo)', icon: Scale, badge: pendingBatchCount > 0 ? `${pendingBatchCount} Orders` : null, badgeColor: 'bg-[#C8963E]' },
           { id: 'adjustments', label: '5. Adjustments & Quarantine', icon: AlertOctagon },
-          { id: 'reports', label: '6. Reports & PO Generator', icon: BarChart3 },
+          { id: 'reports', label: '6. Reports & PO Generator', icon: ShoppingCart, badge: lowStockCount > 0 ? 'PO Ready' : null, badgeColor: 'bg-[#5B2E7A]' },
           { id: 'eod', label: '7. 23:45 EOD Report', icon: Send },
           { id: 'audit', label: '8. Audit Trail', icon: CheckCircle2 }
         ].map(tab => {
@@ -141,7 +151,7 @@ export default function Header({
               <Icon size={14} className={isActive ? 'text-[#C8963E]' : 'text-gray-400'} />
               <span>{tab.label}</span>
               {tab.badge && (
-                <span className={`text-[10px] text-white px-1.5 py-0.5 rounded-full font-bold ${tab.badgeColor}`}>
+                <span className={`text-[10px] text-white px-1.5 py-0.2 rounded-full font-bold ${tab.badgeColor}`}>
                   {tab.badge}
                 </span>
               )}
