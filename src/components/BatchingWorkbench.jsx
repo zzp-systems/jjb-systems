@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
 import { 
   Scale, Plus, CheckCircle2, Clock, Truck, Printer, 
-  AlertCircle, ShieldCheck, Layers, ArrowRight, CheckCheck, 
-  RotateCcw, Sparkles
+  ShieldCheck, CheckCheck, FileText, PackageCheck
 } from 'lucide-react';
 
 export default function BatchingWorkbench({
@@ -10,37 +9,39 @@ export default function BatchingWorkbench({
   onSaveBatchOrder,
   onUpdateOrderStatus,
   onBulkReleaseOrders,
+  onRequestBulkMaterials,
   recipes,
   outlets,
   inventory,
   currentRole,
   isMobileMode
 }) {
-  const [activeSubTab, setActiveSubTab] = useState('workbench'); // 'workbench' | 'new_order'
-  const [filterStatus, setFilterStatus] = useState('ALL'); // ALL, PENDING_BATCHING, BATCHED_KITTED, RELEASED
+  const [activeSubTab, setActiveSubTab] = useState('workbench');
+  const [filterStatus, setFilterStatus] = useState('ALL');
   const [selectedTagOrder, setSelectedTagOrder] = useState(null);
   const [scalingModalOrder, setScalingModalOrder] = useState(null);
+  const [customScaledWeight, setCustomScaledWeight] = useState('');
+  const [selectedScaleSeal, setSelectedScaleSeal] = useState('Seal #798073 (Bench Scale #1)');
 
-  // Form for New Order
-  const [outletId, setOutletId] = useState(outlets[0]?.id || 'pan-de-verde');
-  const [recipeSku, setRecipeSku] = useState(recipes[0]?.sku || 'BRD-PAN-001');
-  const [batchMultiplier, setBatchMultiplier] = useState(1.0);
+  // New Order Form State (Defaults to Laurice Delicacies + 4x 3kg-Yield Pandesal Kits scenario)
+  const [outletId, setOutletId] = useState('laurice-delicacies');
+  const [recipeSku, setRecipeSku] = useState('BRD-PAN-3KG');
+  const [batchMultiplier, setBatchMultiplier] = useState(4);
   const [targetDate, setTargetDate] = useState(new Date().toISOString().slice(0, 10));
   const [orderNotes, setOrderNotes] = useState('');
 
-  // Selected recipe object
   const currentRecipe = recipes.find(r => r.sku === recipeSku) || recipes[0];
   const selectedOutlet = outlets.find(o => o.id === outletId) || outlets[0];
 
-  // Calculated required ingredients for new order
   const calculatedIngredients = currentRecipe.ingredients.map(ing => ({
     ...ing,
-    requiredGrams: ing.gramsPerBatch * batchMultiplier
+    requiredGrams: ing.gramsPerBatch * batchMultiplier,
+    maxRequiredGrams: ing.maxGramsPerBatch ? ing.maxGramsPerBatch * batchMultiplier : null
   }));
 
   const estimatedUnits = Math.round(currentRecipe.unitPieceYield * batchMultiplier);
+  const totalDryFatKitKg = Number(((currentRecipe.unitKitWeightKg || 4.11) * batchMultiplier).toFixed(2));
 
-  // Submit New Order
   const handleCreateOrder = (e) => {
     e.preventDefault();
     const newOrder = {
@@ -53,9 +54,12 @@ export default function BatchingWorkbench({
       recipeName: currentRecipe.name,
       batchMultiplier: parseFloat(batchMultiplier) || 1.0,
       requestedQtyPcs: estimatedUnits,
-      requestedBy: currentRole,
+      expectedKitWeightKg: totalDryFatKitKg,
+      requestedBy: `${selectedOutlet.manager} / ${selectedOutlet.headBaker}`,
       enteredBy: currentRole,
       status: "PENDING_BATCHING",
+      bulkRequisitionStatus: "NOT_REQUESTED", // NOT_REQUESTED | PENDING_JADE_APPROVAL | BULK_ISSUED_BY_JADE
+      linkedWithdrawalSlipNo: null,
       batchTagId: null,
       actualBatchedKg: 0,
       actualBatchedUnits: 0,
@@ -63,10 +67,9 @@ export default function BatchingWorkbench({
       batchedBy: null,
       scaleUsed: null,
       sifter40MeshChecked: false,
-      climateIceAdjusted: false,
       releasedAt: null,
-      releasedTo: null,
-      notes: orderNotes || `Standard outlet batch for ${selectedOutlet.name}.`
+      releasedTo: selectedOutlet.driver || "Outlet Logistics",
+      notes: orderNotes || `${batchMultiplier}x ${currentRecipe.name} for ${selectedOutlet.name}.`
     };
 
     onSaveBatchOrder(newOrder);
@@ -74,289 +77,272 @@ export default function BatchingWorkbench({
     setOrderNotes('');
   };
 
-  // Filtered Orders
+  const openScalingModal = (order) => {
+    const rec = recipes.find(r => r.sku === order.recipeSku);
+    const defaultKg = order.expectedKitWeightKg || Number(((rec?.unitKitWeightKg || 4.11) * order.batchMultiplier).toFixed(2));
+    setCustomScaledWeight(String(defaultKg));
+    setScalingModalOrder(order);
+  };
+
   const filteredOrders = batchOrders.filter(order => {
     if (filterStatus === 'ALL') return true;
     return order.status === filterStatus;
   });
 
-  // Ready to release count
   const readyToReleaseCount = batchOrders.filter(o => o.status === 'BATCHED_KITTED').length;
 
   return (
     <div className="space-y-6">
-      {/* Title & Overview Banner */}
       <div className="flex justify-between items-start flex-wrap gap-2">
         <div>
           <div className="flex items-center gap-2">
             <span className="font-mono text-xs font-bold bg-[#C8963E] text-[#240e32] px-2 py-0.5 rounded">
-              Form-PRO-001 / Form-ING-001
+              Terminal 2 · Form-PRO-001 / Form-ING-001
             </span>
             <h2 className="font-serif text-2xl font-bold text-[#3D1C52]">
-              Outlet Ingredient Batching, Precision Scaling &amp; Release Engine
+              Outlet Ingredient Batching, Precision Scaling & Release Engine
             </h2>
           </div>
           <p className="text-xs text-gray-600 mt-0.5">
-            Sole Authorized Scaling by Romeo B. Malusay · No Unbatched Flour to Outlets · Pre-Shift Scale Calibration (Seals #798073 &amp; #798074)
+            Step 1: Romeo requests bulk raw materials from Jade · Step 2: Jade releases FEFO bulk lots · Step 3: Romeo scales unitized kits & dispatches to Outlets
           </p>
         </div>
 
-        {/* Sub-Tabs Selector */}
         <div className="flex bg-white p-1 rounded-lg border border-[#E2D1B8] shadow-sm">
           <button
             onClick={() => setActiveSubTab('workbench')}
             className={`px-3 py-1.5 rounded-md text-xs font-bold transition flex items-center gap-1.5 ${
-              activeSubTab === 'workbench'
-                ? 'bg-[#3D1C52] text-white shadow-sm'
-                : 'text-gray-600 hover:text-gray-900'
+              activeSubTab === 'workbench' ? 'bg-[#3D1C52] text-white shadow-sm' : 'text-gray-600 hover:text-gray-900'
             }`}
           >
-            <Scale size={14} /> Romeo's Batching Workbench ({batchOrders.length})
+            <Scale size={14} /> Romeo's Workbench ({batchOrders.length})
           </button>
           <button
             onClick={() => setActiveSubTab('new_order')}
             className={`px-3 py-1.5 rounded-md text-xs font-bold transition flex items-center gap-1.5 ${
-              activeSubTab === 'new_order'
-                ? 'bg-[#C8963E] text-[#240e32] shadow-sm'
-                : 'text-gray-600 hover:text-gray-900'
+              activeSubTab === 'new_order' ? 'bg-[#C8963E] text-[#240e32] shadow-sm' : 'text-gray-600 hover:text-gray-900'
             }`}
           >
-            <Plus size={14} /> Intake Outlet Order (Jade / Mariejohn)
+            <Plus size={14} /> Enter Outlet Kitting Order (Jade / Mariejohn)
           </button>
         </div>
       </div>
 
-      {/* VIEW 1: ROMEO'S BATCHING WORKBENCH */}
       {activeSubTab === 'workbench' && (
         <div className="space-y-5">
-          {/* Pre-Shift Calibration & Metrology Banner */}
+          {/* Gate 0 Calibration Banner */}
           <div className="bg-white p-4 rounded-xl border border-[#E2D1B8] shadow-sm space-y-3">
             <div className="flex justify-between items-center flex-wrap gap-2 border-b border-gray-100 pb-2">
               <div className="flex items-center gap-2">
                 <ShieldCheck size={18} className="text-[#1E7A3E]" />
                 <h3 className="font-serif font-bold text-sm text-[#3D1C52]">
-                  Gate 0 — Pre-Shift Scale Metrology &amp; 40-Mesh Sifter Gate (`Form-CAL-001`)
+                  Gate 0 — Pre-Shift Scale Metrology & 40-Mesh Sieve Verification (`Form-CAL-001`)
                 </h3>
               </div>
               <span className="text-[11px] font-bold bg-green-100 text-[#1E7A3E] px-2.5 py-0.5 rounded-full flex items-center gap-1">
-                <CheckCircle2 size={12} /> City Treasurer Seals Valid to Jan 2027
+                <CheckCircle2 size={12} /> 5 City Treasurer Seals Valid to Jan 2027
               </span>
             </div>
-
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+            <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 text-xs">
               <div className="bg-[#FAF6EE] p-2.5 rounded-lg border border-[#E2D1B8]">
-                <p className="font-mono font-bold text-[#5B2E7A]">Govt Seal #798073</p>
-                <p className="text-[11px] text-gray-600">Bench Scale #1 (Dividing)</p>
+                <p className="font-mono font-bold text-[#5B2E7A]">Seal #798073</p>
+                <p className="text-[11px] text-gray-600">Bench Scale #1</p>
                 <p className="text-[10px] text-green-700 font-bold mt-1">✓ Zero-Balanced</p>
               </div>
               <div className="bg-[#FAF6EE] p-2.5 rounded-lg border border-[#E2D1B8]">
-                <p className="font-mono font-bold text-[#5B2E7A]">Govt Seal #798074</p>
-                <p className="text-[11px] text-gray-600">Bench Scale #2 (Packaging QC)</p>
+                <p className="font-mono font-bold text-[#5B2E7A]">Seal #798074</p>
+                <p className="text-[11px] text-gray-600">Bench Scale #2</p>
                 <p className="text-[10px] text-green-700 font-bold mt-1">✓ Zero-Balanced</p>
               </div>
               <div className="bg-[#FAF6EE] p-2.5 rounded-lg border border-[#E2D1B8]">
-                <p className="font-mono font-bold text-[#5B2E7A]">Govt Seal #798607</p>
-                <p className="text-[11px] text-gray-600">1kg Precision Micro Scale</p>
+                <p className="font-mono font-bold text-[#5B2E7A]">Seal #798607</p>
+                <p className="text-[11px] text-gray-600">1kg SF-400 Micro</p>
                 <p className="text-[10px] text-green-700 font-bold mt-1">✓ Zero-Balanced</p>
               </div>
               <div className="bg-[#FAF6EE] p-2.5 rounded-lg border border-[#E2D1B8]">
-                <p className="font-bold text-[#3D1C52]">40-Mesh Sieve Screen</p>
-                <p className="text-[11px] text-gray-600">Stainless Steel Flour Sifter</p>
-                <p className="text-[10px] text-green-700 font-bold mt-1">✓ Intact / Zero Residue</p>
+                <p className="font-mono font-bold text-[#5B2E7A]">Seals #798606 / #605</p>
+                <p className="text-[11px] text-gray-600">40kg & 30kg Platform</p>
+                <p className="text-[10px] text-green-700 font-bold mt-1">✓ Zero-Balanced</p>
+              </div>
+              <div className="bg-[#FAF6EE] p-2.5 rounded-lg border border-[#E2D1B8]">
+                <p className="font-bold text-[#3D1C52]">40-Mesh Sieve</p>
+                <p className="text-[11px] text-gray-600">Stainless Flour Sifter</p>
+                <p className="text-[10px] text-green-700 font-bold mt-1">✓ Intact</p>
               </div>
             </div>
           </div>
 
-          {/* Action Toolbar & Filters */}
+          {/* Filter & Collective Release Bar */}
           <div className="bg-white p-3 rounded-xl border border-[#E2D1B8] shadow-sm flex flex-wrap justify-between items-center gap-3">
-            {/* Filter Tabs */}
             <div className="flex gap-1.5 flex-wrap">
-              <button
-                onClick={() => setFilterStatus('ALL')}
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition ${
-                  filterStatus === 'ALL'
-                    ? 'bg-[#3D1C52] text-white shadow-sm'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
-              >
-                All Orders ({batchOrders.length})
-              </button>
-              <button
-                onClick={() => setFilterStatus('PENDING_BATCHING')}
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition ${
-                  filterStatus === 'PENDING_BATCHING'
-                    ? 'bg-[#C8963E] text-[#240e32] shadow-sm'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
-              >
-                Pending Batching ({batchOrders.filter(o => o.status === 'PENDING_BATCHING').length})
-              </button>
-              <button
-                onClick={() => setFilterStatus('BATCHED_KITTED')}
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition ${
-                  filterStatus === 'BATCHED_KITTED'
-                    ? 'bg-blue-600 text-white shadow-sm'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
-              >
-                Batched / Kitted ({readyToReleaseCount})
-              </button>
-              <button
-                onClick={() => setFilterStatus('RELEASED')}
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition ${
-                  filterStatus === 'RELEASED'
-                    ? 'bg-[#1E7A3E] text-white shadow-sm'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
-              >
-                Released to Outlets ({batchOrders.filter(o => o.status === 'RELEASED').length})
-              </button>
+              {[
+                { id: 'ALL', label: 'All Orders' },
+                { id: 'PENDING_BATCHING', label: 'Pending Batching' },
+                { id: 'BATCHED_KITTED', label: 'Batched / Kitted' },
+                { id: 'RELEASED', label: 'Released to Outlets' }
+              ].map(st => (
+                <button
+                  key={st.id}
+                  onClick={() => setFilterStatus(st.id)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition ${
+                    filterStatus === st.id ? 'bg-[#3D1C52] text-white shadow-sm' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+                >
+                  {st.label} ({batchOrders.filter(o => st.id === 'ALL' || o.status === st.id).length})
+                </button>
+              ))}
             </div>
 
-            {/* COLLECTIVE RELEASE ACTION (User prompt: mark items as released individually or collectively once completed) */}
-            <div>
-              <button
-                onClick={onBulkReleaseOrders}
-                disabled={readyToReleaseCount === 0}
-                className={`px-4 py-2 rounded-lg text-xs font-bold shadow-md flex items-center gap-1.5 transition ${
-                  readyToReleaseCount > 0
-                    ? 'bg-gradient-to-r from-[#1E7A3E] to-[#27ae60] hover:from-[#176332] hover:to-[#1e8449] text-white cursor-pointer animate-pulse'
-                    : 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                }`}
-                title="Mark all completed recipe mixes as released to outlet drivers collectively"
-              >
-                <CheckCheck size={16} />
-                <span>Batch Release All Completed ({readyToReleaseCount})</span>
-              </button>
-            </div>
+            <button
+              onClick={onBulkReleaseOrders}
+              disabled={readyToReleaseCount === 0}
+              className={`px-4 py-2 rounded-lg text-xs font-bold shadow-md flex items-center gap-1.5 transition ${
+                readyToReleaseCount > 0 ? 'bg-gradient-to-r from-[#1E7A3E] to-[#27ae60] hover:from-[#176332] hover:to-[#1e8449] text-white cursor-pointer' : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+              }`}
+            >
+              <CheckCheck size={16} />
+              <span>Collectively Release All Completed Kits ({readyToReleaseCount})</span>
+            </button>
           </div>
 
-          {/* Orders Cards Grid */}
+          {/* Orders Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {filteredOrders.length === 0 ? (
               <div className="col-span-2 p-10 text-center bg-white rounded-xl border border-dashed border-gray-300 text-gray-500">
-                <p className="font-semibold text-sm">No batching orders found under status "{filterStatus}".</p>
-                <p className="text-xs text-gray-400 mt-1">Click "Intake Outlet Order" above to queue a new formula kit.</p>
+                <p className="font-semibold text-sm">No batching orders found for this filter.</p>
               </div>
             ) : (
               filteredOrders.map(order => {
                 const isPending = order.status === 'PENDING_BATCHING';
                 const isBatched = order.status === 'BATCHED_KITTED';
                 const isReleased = order.status === 'RELEASED';
-                const recipeObj = recipes.find(r => r.sku === order.recipeSku);
+                const bulkStatus = order.bulkRequisitionStatus || (order.bulkMaterialsRequested ? 'BULK_ISSUED_BY_JADE' : 'NOT_REQUESTED');
+                const rec = recipes.find(r => r.sku === order.recipeSku);
 
                 return (
                   <div 
                     key={order.orderId} 
-                    className={`bg-white rounded-xl border shadow-sm p-4 flex flex-col justify-between space-y-3 transition ${
-                      isPending ? 'border-amber-300 bg-amber-50/10' :
-                      isBatched ? 'border-blue-300 bg-blue-50/10' :
-                      'border-green-200 bg-white'
+                    className={`bg-white rounded-xl border shadow-sm p-4 flex flex-col justify-between space-y-3 ${
+                      isPending ? 'border-amber-300 bg-amber-50/10' : isBatched ? 'border-blue-300 bg-blue-50/10' : 'border-green-200 bg-white'
                     }`}
                   >
-                    {/* Header info */}
                     <div className="flex justify-between items-start gap-2">
                       <div>
                         <div className="flex items-center gap-2">
                           <span className="font-mono text-[11px] font-bold text-[#5B2E7A]">{order.orderId}</span>
-                          <span className="text-[10px] text-gray-400">· Req: {order.requestDate}</span>
+                          <span className="text-[10px] text-gray-500">· Needed: {order.targetDate || order.requestDate}</span>
                         </div>
                         <h4 className="font-bold text-base text-gray-900 mt-0.5">{order.recipeName}</h4>
-                        <p className="text-xs font-semibold text-[#C8963E]">
-                          {order.outletName}
-                        </p>
+                        <p className="text-xs font-semibold text-[#C8963E]">{order.outletName}</p>
                       </div>
-
-                      {/* Status Badge */}
                       <div>
-                        {isPending && (
-                          <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-amber-100 text-[#D68910] flex items-center gap-1">
-                            <Clock size={11} /> PENDING BATCHING
-                          </span>
-                        )}
-                        {isBatched && (
-                          <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-blue-100 text-blue-800 flex items-center gap-1 font-mono">
-                            <CheckCircle2 size={11} /> BATCHED / KITTED
-                          </span>
-                        )}
-                        {isReleased && (
-                          <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-green-100 text-[#1E7A3E] flex items-center gap-1">
-                            <Truck size={11} /> RELEASED TO OUTLET
-                          </span>
-                        )}
+                        {isPending && <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-amber-100 text-[#D68910] flex items-center gap-1"><Clock size={11} /> PENDING BATCHING</span>}
+                        {isBatched && <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-blue-100 text-blue-800 flex items-center gap-1"><CheckCircle2 size={11} /> BATCHED / KITTED</span>}
+                        {isReleased && <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-green-100 text-[#1E7A3E] flex items-center gap-1"><Truck size={11} /> RELEASED</span>}
                       </div>
                     </div>
 
-                    {/* Batching Formula Snapshot */}
                     <div className="bg-[#FAF6EE] p-3 rounded-lg border border-[#E2D1B8] text-xs space-y-1.5">
-                      <div className="flex justify-between text-gray-700">
-                        <span>Multiplier: <strong>{order.batchMultiplier}x</strong></span>
-                        <span>Estimated Yield: <strong>{order.requestedQtyPcs} pcs</strong></span>
+                      <div className="flex justify-between text-gray-800">
+                        <span>Ordered Kits: <strong>{order.batchMultiplier} Kits</strong> ({rec ? `${rec.standardBatchFlourKg * order.batchMultiplier} kg flour total` : ''})</span>
+                        <span>Est. Yield: <strong>{order.requestedQtyPcs} pcs</strong></span>
                       </div>
+
+                      {/* Component Breakdown Preview */}
+                      {rec && (
+                        <div className="pt-1 border-t border-gray-200 text-[11px] text-gray-600 grid grid-cols-2 gap-x-3 gap-y-0.5">
+                          {rec.ingredients.map((ing, i) => (
+                            <div key={i} className="flex justify-between">
+                              <span>{ing.name}:</span>
+                              <span className="font-mono font-semibold text-gray-800">
+                                {ing.isAsNeeded ? 'As needed' : `${(ing.gramsPerBatch * order.batchMultiplier).toLocaleString()} ${ing.isWater ? 'ml' : 'g'}`}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      {order.linkedWithdrawalSlipNo && (
+                        <div className="pt-1 border-t border-gray-200 flex justify-between items-center text-[11px]">
+                          <span className="text-gray-600">Bulk Warehouse Slip: <strong className="font-mono text-[#5B2E7A]">{order.linkedWithdrawalSlipNo}</strong></span>
+                          <span className={`font-bold ${bulkStatus === 'BULK_ISSUED_BY_JADE' ? 'text-green-700' : 'text-amber-700'}`}>
+                            {bulkStatus === 'BULK_ISSUED_BY_JADE' ? '✓ Bulk Issued by Jade' : '⏳ Awaiting Jade Approval'}
+                          </span>
+                        </div>
+                      )}
+
                       {order.batchTagId && (
                         <div className="flex justify-between font-mono text-[11px] text-[#3D1C52] border-t border-gray-200 pt-1">
                           <span>Batch Tag: <strong>{order.batchTagId}</strong></span>
-                          <span>Net Mix: <strong>{order.actualBatchedKg} kg</strong></span>
+                          <span>Total Scaled Kit Weight: <strong>{order.actualBatchedKg} kg</strong></span>
                         </div>
                       )}
-                      <p className="text-[11px] text-gray-500 italic mt-0.5">
-                        Notes: {order.notes}
-                      </p>
                     </div>
 
-                    {/* Action Bar */}
                     <div className="pt-2 border-t border-gray-100 flex flex-wrap justify-between items-center gap-2">
                       <div className="text-[11px] text-gray-500">
                         {isReleased ? (
-                          <span className="text-green-700 font-semibold">
-                            Released at {order.releasedAt} to {order.releasedTo || 'Outlet Logistics'}
-                          </span>
+                          <span className="text-green-700 font-semibold">Released at {order.releasedAt} to {order.releasedTo || 'Outlet Driver'}</span>
                         ) : isBatched ? (
-                          <span className="text-blue-700 font-semibold">
-                            Batched at {order.batchedAt} by {order.batchedBy}
-                          </span>
+                          <span className="text-blue-700 font-semibold">Kitted at {order.batchedAt} by {order.batchedBy}</span>
                         ) : (
-                          <span>Entered by: {order.enteredBy}</span>
+                          <span>Order Intake: {order.enteredBy}</span>
                         )}
                       </div>
 
                       <div className="flex items-center gap-1.5">
-                        {/* Action 1: Romeo Prepare & Scale */}
-                        {isPending && (
+                        {/* STEP 1: ROMEO REQUESTS BULK RAW MATERIALS FROM JADE */}
+                        {isPending && bulkStatus === 'NOT_REQUESTED' && (
                           <button
-                            onClick={() => setScalingModalOrder(order)}
-                            className="bg-[#C8963E] hover:bg-[#b08030] text-[#240e32] px-3 py-1.5 rounded-lg text-xs font-bold shadow flex items-center gap-1 transition"
+                            onClick={() => onRequestBulkMaterials(order)}
+                            className="bg-[#5B2E7A] hover:bg-[#3D1C52] text-white px-3 py-1.5 rounded-lg text-xs font-bold shadow flex items-center gap-1 transition"
                           >
-                            <Scale size={13} /> Scale &amp; Kit Batch
+                            <FileText size={13} /> 1. Request Bulk Mats from Jade
                           </button>
                         )}
 
-                        {/* Action 2: Individual Release */}
+                        {/* STEP 1.5: AWAITING JADE RELEASE AT DUTCH DOOR */}
+                        {isPending && bulkStatus === 'PENDING_JADE_APPROVAL' && (
+                          <span className="px-3 py-1.5 rounded-lg text-[11px] font-bold bg-amber-100 text-amber-900 border border-amber-300">
+                            ⏳ Awaiting Jade's Release in Tab 3
+                          </span>
+                        )}
+
+                        {/* STEP 2: ROMEO SCALES & KITS ONCE JADE RELEASES BULK */}
+                        {isPending && bulkStatus === 'BULK_ISSUED_BY_JADE' && (
+                          <button
+                            onClick={() => openScalingModal(order)}
+                            className="bg-[#C8963E] hover:bg-[#b08030] text-[#240e32] px-3 py-1.5 rounded-lg text-xs font-bold shadow flex items-center gap-1 transition"
+                          >
+                            <Scale size={13} /> 2. Scale & Kit Recipe Mix
+                          </button>
+                        )}
+
+                        {/* STEP 3: INDIVIDUAL RELEASE TO OUTLET */}
                         {isBatched && (
                           <>
                             <button
                               onClick={() => setSelectedTagOrder(order)}
-                              className="text-xs text-[#5B2E7A] hover:bg-purple-50 px-2 py-1 rounded font-bold border border-[#5B2E7A]"
+                              className="text-xs text-[#5B2E7A] hover:bg-purple-50 px-2.5 py-1.5 rounded font-bold border border-[#5B2E7A] flex items-center gap-1"
                               title="Print Form-ING-001 Tag"
                             >
-                              <Printer size={13} />
+                              <Printer size={13} /> Tag
                             </button>
                             <button
                               onClick={() => onUpdateOrderStatus(order.orderId, 'RELEASED')}
                               className="bg-[#1E7A3E] hover:bg-[#165c2f] text-white px-3 py-1.5 rounded-lg text-xs font-bold shadow flex items-center gap-1 transition"
                             >
-                              <Truck size={13} /> Release to Outlet
+                              <Truck size={13} /> 3. Release to Outlet
                             </button>
                           </>
                         )}
 
-                        {/* View Tag for Released */}
                         {isReleased && (
                           <button
                             onClick={() => setSelectedTagOrder(order)}
                             className="text-xs text-gray-600 hover:text-[#5B2E7A] underline font-semibold flex items-center gap-1"
                           >
-                            <Printer size={12} /> View Tag
+                            <Printer size={12} /> Print Tag
                           </button>
                         )}
                       </div>
@@ -369,103 +355,83 @@ export default function BatchingWorkbench({
         </div>
       )}
 
-      {/* VIEW 2: INTAKE NEW OUTLET BATCH REQUISITION */}
+      {/* SUB-TAB 2: INTAKE NEW OUTLET KITTING ORDER */}
       {activeSubTab === 'new_order' && (
         <form onSubmit={handleCreateOrder} className="bg-white p-5 rounded-xl border border-[#E2D1B8] shadow-sm space-y-5">
           <div className="border-b border-gray-200 pb-3 flex justify-between items-center flex-wrap gap-2">
             <div>
               <h3 className="font-serif font-bold text-base text-[#5B2E7A] flex items-center gap-2">
-                <Plus size={18} /> Intake Outlet Ingredient Batch Order (`Form-PRO-001`)
+                <Plus size={18} /> Intake Outlet Ingredient Kitting Order (`Form-PRO-001`)
               </h3>
               <p className="text-xs text-gray-500">
-                Prepared by Jade Q. Dela Cruz or Mariejohn F. Tacuban for Romeo B. Malusay to Scale
+                Enter outlet orders (e.g., Laurice Delicacies ordering 4x 3kg-yield Kits of Commercial Pandesal Mix) for Romeo B. Malusay to batch and kit.
               </p>
             </div>
-            <span className="text-xs font-bold text-[#C8963E] bg-amber-50 px-2.5 py-1 rounded border border-amber-200">
-              Formulation Costing Verified
-            </span>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 text-xs">
             <div>
-              <label className="block font-bold text-gray-700 mb-1">Target Outlet / Facility</label>
-              <select
-                value={outletId}
-                onChange={(e) => setOutletId(e.target.value)}
-                className="w-full p-2 border rounded bg-white font-medium"
-              >
-                {outlets.map(o => (
-                  <option key={o.id} value={o.id}>{o.name} ({o.location})</option>
-                ))}
+              <label className="block font-bold text-gray-700 mb-1">Requesting Outlet / Line</label>
+              <select value={outletId} onChange={(e) => setOutletId(e.target.value)} className="w-full p-2 border rounded bg-white font-medium">
+                {outlets.map(o => <option key={o.id} value={o.id}>{o.name}</option>)}
               </select>
             </div>
-
             <div>
-              <label className="block font-bold text-gray-700 mb-1">Target Product Recipe</label>
-              <select
-                value={recipeSku}
-                onChange={(e) => setRecipeSku(e.target.value)}
-                className="w-full p-2 border rounded bg-white font-medium"
-              >
-                {recipes.map(r => (
-                  <option key={r.sku} value={r.sku}>{r.sku} - {r.name}</option>
-                ))}
+              <label className="block font-bold text-gray-700 mb-1">Product Recipe Kit</label>
+              <select value={recipeSku} onChange={(e) => setRecipeSku(e.target.value)} className="w-full p-2 border rounded bg-white font-medium">
+                {recipes.map(r => <option key={r.sku} value={r.sku}>{r.sku} — {r.name}</option>)}
               </select>
             </div>
-
             <div>
-              <label className="block font-bold text-gray-700 mb-1">Batch Multiplier</label>
+              <label className="block font-bold text-gray-700 mb-1">Quantity of Kits Ordered</label>
               <input
                 type="number"
-                min="0.25"
-                step="0.25"
+                min="1"
+                step="1"
                 value={batchMultiplier}
-                onChange={(e) => setBatchMultiplier(parseFloat(e.target.value) || 1.0)}
+                onChange={(e) => setBatchMultiplier(parseFloat(e.target.value) || 1)}
                 className="w-full p-2 border rounded font-mono font-bold text-[#3D1C52]"
               />
               <span className="text-[10px] text-gray-500 mt-0.5 block">
-                Calculated Units: <strong>{estimatedUnits} pieces</strong>
+                Total Flour: <strong>{(currentRecipe.standardBatchFlourKg * batchMultiplier).toFixed(1)} kg</strong> · Est. Yield: <strong>{estimatedUnits} pcs</strong>
               </span>
             </div>
-
             <div>
-              <label className="block font-bold text-gray-700 mb-1">Requested Needed Date</label>
-              <input
-                type="date"
-                value={targetDate}
-                onChange={(e) => setTargetDate(e.target.value)}
-                className="w-full p-2 border rounded text-xs"
-              />
+              <label className="block font-bold text-gray-700 mb-1">Requested Delivery Date</label>
+              <input type="date" value={targetDate} onChange={(e) => setTargetDate(e.target.value)} className="w-full p-2 border rounded text-xs" />
             </div>
           </div>
 
           <div>
-            <label className="block font-bold text-gray-700 mb-1 text-xs">Special Instructions / Climate Notes</label>
+            <label className="block font-bold text-gray-700 mb-1 text-xs">Order Notes / Instructions</label>
             <input
               type="text"
               value={orderNotes}
               onChange={(e) => setOrderNotes(e.target.value)}
-              placeholder="e.g. For morning delivery before 08:00 AM. Check ice substitution if hot."
+              placeholder="e.g. Pack into 4 separate sealed 3kg-yield HDPE kits for Laurice Delicacies morning bake."
               className="w-full p-2 border rounded text-xs"
             />
           </div>
 
-          {/* Master Recipe Pull List Preview */}
+          {/* Scaled Measurements Table */}
           <div className="bg-[#FAF6EE] p-4 rounded-xl border border-[#E2D1B8] space-y-3">
-            <h4 className="font-serif font-bold text-xs text-[#5B2E7A] flex items-center justify-between">
-              <span>Automatic Component Gram Weights (Flour Basis = 100.0%)</span>
-              <span className="text-[11px] text-gray-500">Auto-calculated for Romeo's Pull List</span>
-            </h4>
-
+            <div className="flex justify-between items-center flex-wrap gap-2">
+              <h4 className="font-serif font-bold text-xs text-[#5B2E7A]">
+                Scaled Measurements Breakdown ({batchMultiplier}x {currentRecipe.name})
+              </h4>
+              <span className="text-xs font-mono font-bold text-[#1E7A3E]">
+                Total Dry + Fat Kit Weight: {totalDryFatKitKg} kg
+              </span>
+            </div>
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs bg-white rounded border">
                 <thead className="bg-[#3D1C52] text-white">
                   <tr>
                     <th className="p-2">Material Code</th>
-                    <th className="p-2">Component Name</th>
-                    <th className="p-2 text-right">Baker's %</th>
-                    <th className="p-2 text-right font-bold">Scaling Target (Grams)</th>
-                    <th className="p-2 text-right font-bold">Weight in kg</th>
+                    <th className="p-2">Ingredient Component</th>
+                    <th className="p-2">Per 1 Kit Standard</th>
+                    <th className="p-2 text-right font-bold">Total for {batchMultiplier} Kit(s) (Grams)</th>
+                    <th className="p-2 text-right font-bold">Total Bulk Pull (kg / L)</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y">
@@ -473,12 +439,16 @@ export default function BatchingWorkbench({
                     <tr key={idx}>
                       <td className="p-2 font-mono text-[#5B2E7A] font-bold">{ing.code}</td>
                       <td className="p-2 font-medium">{ing.name}</td>
-                      <td className="p-2 text-right font-mono">{ing.pct}%</td>
+                      <td className="p-2 text-gray-600 font-mono">{ing.rangeNote || `${ing.gramsPerBatch} g`}</td>
                       <td className="p-2 text-right font-mono font-bold text-[#1E7A3E]">
-                        {ing.requiredGrams.toLocaleString()} g
+                        {ing.isAsNeeded
+                          ? 'As needed for rolling'
+                          : ing.maxRequiredGrams
+                          ? `${ing.requiredGrams.toLocaleString()} g to ${ing.maxRequiredGrams.toLocaleString()} ${ing.isWater ? 'ml' : 'g'}`
+                          : `${ing.requiredGrams.toLocaleString()} ${ing.isWater ? 'ml' : 'g'}`}
                       </td>
-                      <td className="p-2 text-right font-mono text-gray-700">
-                        {(ing.requiredGrams / 1000).toFixed(2)} kg
+                      <td className="p-2 text-right font-mono text-gray-800 font-semibold">
+                        {ing.isAsNeeded ? 'As needed' : `${(ing.requiredGrams / 1000).toFixed(3)} ${ing.isWater ? 'L' : 'kg'}`}
                       </td>
                     </tr>
                   ))}
@@ -487,162 +457,122 @@ export default function BatchingWorkbench({
             </div>
           </div>
 
-          <div className="flex justify-between items-center pt-2">
-            <button
-              type="button"
-              onClick={() => setActiveSubTab('workbench')}
-              className="text-xs text-gray-600 hover:underline"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              className="bg-[#C8963E] hover:bg-[#b08030] text-[#240e32] font-bold text-xs px-6 py-2.5 rounded-lg shadow-md flex items-center gap-2 transition"
-            >
-              <Plus size={16} /> Submit Batch Order to Romeo's Queue (`Form-PRO-001`)
+          <div className="flex justify-end pt-2">
+            <button type="submit" className="bg-[#C8963E] hover:bg-[#b08030] text-[#240e32] font-bold text-xs px-6 py-2.5 rounded-lg shadow-md flex items-center gap-2">
+              <Plus size={16} /> Submit Outlet Order to Romeo's Workbench
             </button>
           </div>
         </form>
       )}
 
-      {/* MODAL 1: ROMEO'S SCALING & KITTING MODAL */}
+      {/* MODAL 1: ROMEO'S SCALING & KITTING CERTIFICATION */}
       {scalingModalOrder && (
         <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl max-w-2xl w-full p-6 shadow-2xl border-2 border-[#C8963E] space-y-4 max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-start border-b pb-3">
               <div>
-                <span className="font-mono text-xs font-bold text-[#5B2E7A]">ROMEO MALUSAY SCALING WORKBENCH</span>
+                <span className="font-mono text-xs font-bold text-[#5B2E7A]">ROMEO B. MALUSAY · PRECISION SCALING WORKBENCH</span>
                 <h3 className="font-serif font-bold text-xl text-gray-900">{scalingModalOrder.recipeName}</h3>
-                <p className="text-xs text-gray-500">Destination: {scalingModalOrder.outletName} ({scalingModalOrder.requestedQtyPcs} pcs)</p>
+                <p className="text-xs text-gray-500">
+                  Outlet: <strong>{scalingModalOrder.outletName}</strong> · Quantity: <strong>{scalingModalOrder.batchMultiplier} Kits</strong> ({scalingModalOrder.requestedQtyPcs} pcs yield)
+                </p>
               </div>
-              <button 
-                onClick={() => setScalingModalOrder(null)}
-                className="text-gray-400 hover:text-gray-600 font-bold text-lg"
-              >
-                ✕
-              </button>
+              <button onClick={() => setScalingModalOrder(null)} className="text-gray-400 hover:text-gray-600 font-bold text-lg">✕</button>
             </div>
 
-            {/* Checklist */}
             <div className="bg-[#FAF6EE] p-3 rounded-lg border border-[#E2D1B8] text-xs space-y-2">
-              <p className="font-bold text-[#3D1C52]">Mandatory Scaling Safety &amp; Metrology Checklist:</p>
+              <p className="font-bold text-[#3D1C52]">Mandatory cGMP Scaling & Kitting Verification (`Form-ING-001`):</p>
               <label className="flex items-center gap-2 font-medium">
                 <input type="checkbox" defaultChecked className="accent-[#1E7A3E]" />
-                Bench Scales zero-balanced (Govt Seals #798073 &amp; #798074 verified intact)
+                Digital scales zero-balanced (City Treasurer Seals #798073, #798074 & #798607 verified intact)
               </label>
               <label className="flex items-center gap-2 font-medium">
                 <input type="checkbox" defaultChecked className="accent-[#1E7A3E]" />
-                All flour aerated and screened through 40-mesh stainless steel sifter
+                All Bread Flour passed through 40-mesh stainless steel sifter screen
               </label>
               <label className="flex items-center gap-2 font-medium">
                 <input type="checkbox" defaultChecked className="accent-[#1E7A3E]" />
-                Unitized into clean, food-grade HDPE color-coded container
+                Portioned into {scalingModalOrder.batchMultiplier} individual sealed, food-grade HDPE kit containers
               </label>
             </div>
 
-            {/* Scaling Inputs */}
-            <div className="grid grid-cols-2 gap-3 text-xs">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
               <div>
-                <label className="block font-bold text-gray-700 mb-1">Batch Tag ID</label>
+                <label className="block font-bold text-gray-700 mb-1">Batch Identification Tag ID</label>
                 <input
                   type="text"
                   readOnly
-                  defaultValue={`KIT-${new Date().toISOString().slice(2, 10).replace(/-/g, '')}-${scalingModalOrder.orderId.slice(-4)}`}
+                  value={`KIT-${new Date().toISOString().slice(2, 10).replace(/-/g, '')}-${scalingModalOrder.orderId.slice(-4)}`}
                   className="w-full p-2 border rounded font-mono font-bold bg-gray-50 text-[#5B2E7A]"
                 />
               </div>
               <div>
-                <label className="block font-bold text-gray-700 mb-1">Actual Measured Batch Weight (kg)</label>
+                <label className="block font-bold text-gray-700 mb-1">Calibrated Scale Used</label>
+                <select
+                  value={selectedScaleSeal}
+                  onChange={(e) => setSelectedScaleSeal(e.target.value)}
+                  className="w-full p-2 border rounded bg-white font-mono text-xs"
+                >
+                  <option>Seal #798073 (Bench Scale #1)</option>
+                  <option>Seal #798607 (1kg Precision SF-400)</option>
+                  <option>Seal #798606 (40kg Platform Scale)</option>
+                  <option>Seal #798605 (30kg Platform Scale)</option>
+                </select>
+              </div>
+              <div>
+                <label className="block font-bold text-gray-700 mb-1">Total Scaled Kit Weight (kg)</label>
                 <input
                   type="number"
-                  step="0.1"
-                  defaultValue={((scalingModalOrder.requestedQtyPcs * 0.04) + 5).toFixed(1)}
+                  step="0.01"
+                  value={customScaledWeight}
+                  onChange={(e) => setCustomScaledWeight(e.target.value)}
                   className="w-full p-2 border rounded font-mono font-bold text-green-700"
                 />
               </div>
             </div>
 
             <div className="pt-2 border-t flex justify-end gap-2">
-              <button
-                onClick={() => setScalingModalOrder(null)}
-                className="px-4 py-2 text-xs text-gray-600 hover:underline"
-              >
-                Cancel
-              </button>
+              <button onClick={() => setScalingModalOrder(null)} className="px-4 py-2 text-xs text-gray-600 hover:underline">Cancel</button>
               <button
                 onClick={() => {
                   onUpdateOrderStatus(
-                    scalingModalOrder.orderId, 
+                    scalingModalOrder.orderId,
                     'BATCHED_KITTED',
                     `KIT-${new Date().toISOString().slice(2, 10).replace(/-/g, '')}-${scalingModalOrder.orderId.slice(-4)}`,
-                    parseFloat(((scalingModalOrder.requestedQtyPcs * 0.04) + 5).toFixed(1))
+                    parseFloat(customScaledWeight) || scalingModalOrder.expectedKitWeightKg || 16.44,
+                    selectedScaleSeal
                   );
                   setScalingModalOrder(null);
                 }}
                 className="bg-[#1E7A3E] hover:bg-[#165c2f] text-white text-xs font-bold px-6 py-2.5 rounded-lg shadow-md flex items-center gap-1.5"
               >
-                <CheckCircle2 size={16} /> Certify &amp; Mark as Batched/Kitted (`Form-ING-001`)
+                <PackageCheck size={16} /> Certify & Mark as Batched / Kitted (`Form-ING-001`)
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* MODAL 2: PRINTABLE BATCH IDENTIFICATION TAG (FORM-ING-001) */}
+      {/* MODAL 2: PRINTABLE BATCH IDENTIFICATION TAG */}
       {selectedTagOrder && (
         <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border-4 border-[#C8963E] space-y-4">
             <div className="text-center border-b-2 border-dashed pb-3">
               <p className="text-[10px] font-bold tracking-widest text-gray-500 uppercase">JANG-JANG BAKESHOP · KITTING DIVISION</p>
-              <h3 className="font-serif font-bold text-xl text-[#3D1C52]">
-                Batch Identification &amp; Kitting Tag (`Form-ING-001`)
-              </h3>
-              <p className="font-mono text-sm font-bold text-[#C8963E] mt-1">
-                {selectedTagOrder.batchTagId || 'TAG-PENDING'}
-              </p>
+              <h3 className="font-serif font-bold text-xl text-[#3D1C52]">Batch Identification Tag (`Form-ING-001`)</h3>
+              <p className="font-mono text-sm font-bold text-[#C8963E] mt-1">{selectedTagOrder.batchTagId}</p>
             </div>
-
             <div className="space-y-2 text-xs">
-              <div className="flex justify-between border-b py-1">
-                <span className="text-gray-500">Product Line:</span>
-                <span className="font-bold text-gray-900">{selectedTagOrder.recipeName}</span>
-              </div>
-              <div className="flex justify-between border-b py-1">
-                <span className="text-gray-500">Destination Outlet:</span>
-                <span className="font-bold text-[#5B2E7A]">{selectedTagOrder.outletName}</span>
-              </div>
-              <div className="flex justify-between border-b py-1">
-                <span className="text-gray-500">Batch Quantity:</span>
-                <span className="font-bold">{selectedTagOrder.requestedQtyPcs} pieces ({selectedTagOrder.batchMultiplier}x multiplier)</span>
-              </div>
-              <div className="flex justify-between border-b py-1">
-                <span className="text-gray-500">Scaled Net Weight:</span>
-                <span className="font-mono font-bold text-[#1E7A3E]">{selectedTagOrder.actualBatchedKg || 25} kg</span>
-              </div>
-              <div className="flex justify-between border-b py-1">
-                <span className="text-gray-500">Scale Inspection:</span>
-                <span className="font-mono text-[11px]">Bench #1 (Seal #798073) Valid</span>
-              </div>
-              <div className="flex justify-between border-b py-1">
-                <span className="text-gray-500">Flour Screening:</span>
-                <span className="text-green-700 font-bold">40-Mesh Sieve Verified</span>
-              </div>
+              <div className="flex justify-between border-b py-1"><span className="text-gray-500">Recipe Kit:</span><span className="font-bold">{selectedTagOrder.recipeName}</span></div>
+              <div className="flex justify-between border-b py-1"><span className="text-gray-500">Destination Outlet:</span><span className="font-bold text-[#5B2E7A]">{selectedTagOrder.outletName}</span></div>
+              <div className="flex justify-between border-b py-1"><span className="text-gray-500">Kit Count & Yield:</span><span className="font-bold">{selectedTagOrder.batchMultiplier} Kits ({selectedTagOrder.requestedQtyPcs} pcs)</span></div>
+              <div className="flex justify-between border-b py-1"><span className="text-gray-500">Total Scaled Net Weight:</span><span className="font-mono font-bold text-[#1E7A3E]">{selectedTagOrder.actualBatchedKg} kg</span></div>
+              <div className="flex justify-between border-b py-1"><span className="text-gray-500">Calibrated Scale:</span><span className="font-mono text-[11px]">{selectedTagOrder.scaleUsed || 'Seal #798073 Valid'}</span></div>
+              <div className="flex justify-between border-b py-1"><span className="text-gray-500">Prepared By:</span><span className="font-bold">{selectedTagOrder.batchedBy || 'Romeo B. Malusay'}</span></div>
             </div>
-
-            <div className="bg-[#FAF6EE] p-2.5 rounded border text-[11px] text-gray-600">
-              <p className="font-bold text-[#3D1C52]">Thermal Lethality &amp; Mixing Rule:</p>
-              <p>Dough mass exit temperature must strictly remain 26°C–28°C. Oven core internal loaf heat must exceed 95°C (CCP-1).</p>
-            </div>
-
-            <div className="border-t pt-3 flex justify-between items-center text-xs">
-              <div>
-                <p className="text-[10px] text-gray-400">Ingredient Scaler:</p>
-                <p className="font-bold text-[#3D1C52]">Romeo B. Malusay</p>
-              </div>
-              <button
-                onClick={() => window.print()}
-                className="bg-[#3D1C52] text-white text-xs font-bold px-4 py-2 rounded flex items-center gap-1.5"
-              >
+            <div className="border-t pt-3 flex justify-between items-center">
+              <button onClick={() => setSelectedTagOrder(null)} className="text-xs text-gray-500 hover:underline">Close</button>
+              <button onClick={() => window.print()} className="bg-[#3D1C52] text-white text-xs font-bold px-4 py-2 rounded flex items-center gap-1.5">
                 <Printer size={13} /> Print Tag
               </button>
             </div>
