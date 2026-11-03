@@ -50,20 +50,21 @@ export default function App() {
   const [isOffline, setIsOffline] = useState(false);
   const [queueCount, setQueueCount] = useState(0);
 
-  // Persistent States
-  const [inventory, setInventory] = usePersistentState('JJB_WMS_LIVE_V4_3_INVENTORY', MASTER_MATERIALS);
-  const [receivingReports, setReceivingReports] = usePersistentState('JJB_WMS_LIVE_V4_3_RECEIVING', INITIAL_RECEIVING_REPORTS);
-  const [withdrawals, setWithdrawals] = usePersistentState('JJB_WMS_LIVE_V4_3_WITHDRAWALS', INITIAL_WITHDRAWALS);
-  const [batchOrders, setBatchOrders] = usePersistentState('JJB_WMS_LIVE_V4_3_BATCHING', INITIAL_BATCHING_ORDERS);
-  const [quarantineList, setQuarantineList] = usePersistentState('JJB_WMS_LIVE_V4_3_QUARANTINE', INITIAL_QUARANTINE);
-  const [adjustments, setAdjustments] = usePersistentState('JJB_WMS_LIVE_V4_3_ADJUSTMENTS', INITIAL_ADJUSTMENTS);
-  const [auditLogs, setAuditLogs] = usePersistentState('JJB_WMS_LIVE_V4_3_AUDIT', INITIAL_AUDIT_LOGS);
-  const [purchaseOrders, setPurchaseOrders] = usePersistentState('JJB_WMS_LIVE_V4_3_PO', []);
+  // Persistent States (Data survives browser refresh)
+  const [inventory, setInventory] = usePersistentState('JJB_WMS_LIVE_V4_4_INVENTORY', MASTER_MATERIALS);
+  const [receivingReports, setReceivingReports] = usePersistentState('JJB_WMS_LIVE_V4_4_RECEIVING', INITIAL_RECEIVING_REPORTS);
+  const [withdrawals, setWithdrawals] = usePersistentState('JJB_WMS_LIVE_V4_4_WITHDRAWALS', INITIAL_WITHDRAWALS);
+  const [batchOrders, setBatchOrders] = usePersistentState('JJB_WMS_LIVE_V4_4_BATCHING', INITIAL_BATCHING_ORDERS);
+  const [quarantineList, setQuarantineList] = usePersistentState('JJB_WMS_LIVE_V4_4_QUARANTINE', INITIAL_QUARANTINE);
+  const [adjustments, setAdjustments] = usePersistentState('JJB_WMS_LIVE_V4_4_ADJUSTMENTS', INITIAL_ADJUSTMENTS);
+  const [auditLogs, setAuditLogs] = usePersistentState('JJB_WMS_LIVE_V4_4_AUDIT', INITIAL_AUDIT_LOGS);
 
   const [prefilledItem, setPrefilledItem] = useState(null);
 
+  // Derived metrics
   const lowStockCount = inventory.filter(i => i.currentBalance <= i.threshold).length;
   const pendingBatchCount = batchOrders.filter(b => b.status === 'ORDER_PLACED' || b.status === 'BULK_REQUESTED').length;
+  const pendingBulkApprovalCount = withdrawals.filter(w => w.status === 'PENDING_APPROVAL').length;
 
   // Sync simulation
   useEffect(() => {
@@ -83,8 +84,8 @@ export default function App() {
         const today = now.toISOString().slice(0, 10);
         if (lastSent !== today) {
           localStorage.setItem('JJB_EOD_SENT_DATE', today);
-          recordAudit('AUTOMATED_EOD_BROADCAST', 'System 23:45 automatic settlement report triggered and dispatched to stakeholders.');
-          // In a real app, this would trigger an API call to your Apps Script emailer
+          recordAudit('AUTOMATED_EOD_BROADCAST', 'System 23:45 PHT automatic settlement report triggered and dispatched to stakeholders.');
+          // In production, this would trigger your Apps Script emailer
         }
       }
     }, 30000); // Check every 30 seconds
@@ -104,7 +105,6 @@ export default function App() {
     if (!isOffline) setQueueCount(prev => prev + 1);
   };
 
-  // --- RECEIVING ---
   const handleSaveReceiving = (report) => {
     setReceivingReports(prev => [report, ...prev]);
     setInventory(prev => prev.map(invItem => {
@@ -119,26 +119,67 @@ export default function App() {
     setActiveTab('dashboard');
   };
 
-  // --- DIRECT ISSUANCE (JADE) ---
   const handleSaveWithdrawal = (slip) => {
     setWithdrawals(prev => [slip, ...prev]);
     setInventory(prev => prev.map(invItem => {
       const issuedItem = slip.items.find(i => i.materialCode === invItem.code);
-      if (issuedItem) {
-        return { ...invItem, currentBalance: invItem.currentBalance - issuedItem.qtyIssuedSec };
-      }
+      if (issuedItem) return { ...invItem, currentBalance: invItem.currentBalance - issuedItem.qtyIssuedSec };
       return invItem;
     }));
     recordAudit('STOCK_OUT_ISSUANCE', `Issued Form-WAR-001 ${slip.slipNo} to ${slip.requestingEntity}`);
   };
 
-  // --- BATCHING (ROMEO) ---
+  // --- APPROVAL GATE FIX ---
+  const handleApprovePendingWithdrawal = (slipNo) => {
+    const slip = withdrawals.find(w => w.slipNo === slipNo);
+    if (!slip) return;
+
+    // 1. Deduct Inventory
+    setInventory(prev => prev.map(invItem => {
+      const issuedItem = slip.items.find(i => i.materialCode === invItem.code);
+      if (issuedItem) return { ...invItem, currentBalance: invItem.currentBalance - issuedItem.qtyIssuedSec };
+      return invItem;
+    }));
+
+    // 2. Mark Slip as Issued
+    setWithdrawals(prev => prev.map(w => w.slipNo === slipNo ? { ...w, status: 'ISSUED & RECONCILED', issuedBy: 'Jade Q. Dela Cruz' } : w));
+
+    // 3. Unlock Romeo's Batching Workbench
+    setBatchOrders(prev => prev.map(o => {
+      if (o.orderId === slip.linkedOrderId) {
+        return { ...o, status: 'BULK_ISSUED_TO_ROMEO', bulkMaterialsApprovedByJade: true, bulkIssuedAt: new Date().toLocaleTimeString(), bulkIssuedBy: 'Jade Q. Dela Cruz' };
+      }
+      return o;
+    }));
+
+    recordAudit('BULK_APPROVED', `Jade approved and released bulk materials for Slip ${slipNo}.`);
+  };
+
+  // --- BATCHING ---
   const handleSaveBatchOrder = (newOrder) => {
     setBatchOrders(prev => [newOrder, ...prev]);
     recordAudit('BATCH_REQUISITION', `Created Form-PRO-001 for ${newOrder.recipeName} to ${newOrder.outletName}`);
   };
 
-  const handleRequestBulkMaterials = (order, bulkReqs) => {
+  const handleRequestBulkMaterials = (order) => {
+    const recipe = MASTER_RECIPES.find(r => r.sku === order.recipeSku);
+    if (!recipe) return;
+
+    const bulkItems = recipe.ingredients.filter(i => !i.isPackaging && i.code !== 'WATER').map(ing => {
+      const requiredSec = (ing.gramsPerBatch * order.batchMultiplier) / 1000;
+      const mat = inventory.find(m => m.code === ing.code);
+      return {
+        materialCode: ing.code,
+        name: ing.name,
+        qtyRequestedSec: requiredSec,
+        qtyIssuedSec: requiredSec,
+        secondaryUom: mat ? mat.secondaryUom : 'kg',
+        lotNumber: mat?.lots?.[0]?.lotNumber || 'FEFO-LOT',
+        storageRoom: mat?.room || 'Dry Room 1',
+        remarks: `Bulk requisition for Batch Order ${order.orderId}`
+      };
+    });
+
     const newSlip = {
       slipNo: `BRQ-${new Date().toISOString().slice(0, 10).replace(/-/g, '')}-${Date.now().toString().slice(-3)}`,
       date: new Date().toISOString().slice(0, 10),
@@ -149,54 +190,18 @@ export default function App() {
       requestedBy: 'Romeo B. Malusay',
       issuedBy: 'Jade Q. Dela Cruz (Pending Approval)',
       receivedBy: 'Romeo B. Malusay',
-      items: bulkReqs.filter(i => !i.isHydrationRef && !i.isAsNeeded && !i.isPackaging).map(ing => ({
-        materialCode: ing.code,
-        name: ing.name,
-        qtyRequestedSec: ing.totalKg,
-        qtyIssuedSec: ing.totalKg,
-        secondaryUom: ing.secondaryUom,
-        lotNumber: ing.oldestLot,
-        storageRoom: inventory.find(m => m.code === ing.code)?.room || 'Dry Room 1',
-        remarks: `Bulk pull for ${order.kitCount} kits`
-      })),
+      items: bulkItems,
       status: "PENDING_APPROVAL",
       linkedOrderId: order.orderId
     };
 
     setWithdrawals(prev => [newSlip, ...prev]);
-    setBatchOrders(prev => prev.map(o => o.orderId === order.orderId ? { ...o, status: 'BULK_REQUESTED', bulkSlipNo: newSlip.slipNo } : o));
+    setBatchOrders(prev => prev.map(o => o.orderId === order.orderId ? { ...o, status: 'BULK_REQUESTED', bulkMaterialsRequested: true, linkedWithdrawalSlipNo: newSlip.slipNo } : o));
     recordAudit('BULK_REQUESTED', `Romeo requested bulk materials for Order ${order.orderId}. Slip ${newSlip.slipNo} generated.`);
+    
+    alert("Bulk Material Request sent to Jade! Inventory will be locked until Jade approves it in the 'Stock Release' tab.");
   };
 
-  // --- APPROVAL (JADE) ---
-  const handleApproveBulkRelease = (slipNo) => {
-    const slip = withdrawals.find(w => w.slipNo === slipNo);
-    if (!slip) return;
-
-    // 1. Deduct Inventory
-    setInventory(prev => prev.map(invItem => {
-      const issuedItem = slip.items.find(i => i.materialCode === invItem.code);
-      if (issuedItem) {
-        return { ...invItem, currentBalance: invItem.currentBalance - issuedItem.qtyIssuedSec };
-      }
-      return invItem;
-    }));
-
-    // 2. Mark Slip as Issued
-    setWithdrawals(prev => prev.map(w => w.slipNo === slipNo ? { ...w, status: 'ISSUED & RECONCILED', issuedBy: 'Jade Q. Dela Cruz' } : w));
-
-    // 3. Update Order Status to Unlock Romeo
-    setBatchOrders(prev => prev.map(o => {
-      if (o.orderId === slip.linkedOrderId) {
-        return { ...o, status: 'BULK_ISSUED_TO_ROMEO', bulkIssuedAt: new Date().toLocaleTimeString(), bulkIssuedBy: 'Jade Q. Dela Cruz' };
-      }
-      return o;
-    }));
-
-    recordAudit('BULK_APPROVED', `Jade approved and released bulk materials for Slip ${slipNo}.`);
-  };
-
-  // --- KITTING & RELEASING (ROMEO) ---
   const handleUpdateOrderStatus = (orderId, newStatus, batchTagId = null, actualBatchedKg = 0) => {
     setBatchOrders(prev => prev.map(order => {
       if (order.orderId === orderId) {
@@ -208,17 +213,15 @@ export default function App() {
           actualBatchedUnits: order.requestedQtyPcs,
           batchedAt: newStatus === 'BATCHED_KITTED' ? new Date().toLocaleTimeString() : order.batchedAt,
           batchedBy: newStatus === 'BATCHED_KITTED' ? currentRole : order.batchedBy,
+          sifter40MeshChecked: newStatus === 'BATCHED_KITTED' ? true : order.sifter40MeshChecked,
           releasedAt: newStatus === 'RELEASED' ? new Date().toLocaleTimeString() : order.releasedAt,
         };
       }
       return order;
     }));
 
-    if (newStatus === 'BATCHED_KITTED') {
-      recordAudit('BATCH_KITTED', `Certified Form-ING-001 scaling for Order ${orderId}`);
-    } else if (newStatus === 'RELEASED') {
-      recordAudit('BATCH_RELEASED', `Released batch for Order ${orderId} to outlet driver`);
-    }
+    if (newStatus === 'BATCHED_KITTED') recordAudit('BATCH_KITTED', `Certified Form-ING-001 scaling for Order ${orderId}`);
+    if (newStatus === 'RELEASED') recordAudit('BATCH_RELEASED', `Released batch for Order ${orderId} to outlet driver`);
   };
 
   const handleBulkReleaseOrders = () => {
@@ -231,7 +234,6 @@ export default function App() {
     recordAudit('BULK_BATCH_RELEASE', `Collectively released all ready kitted batches to outlets`);
   };
 
-  // --- ADJUSTMENTS ---
   const handleSaveAdjustment = (adj) => {
     setAdjustments(prev => [adj, ...prev]);
     setInventory(prev => prev.map(invItem => {
@@ -249,13 +251,20 @@ export default function App() {
     recordAudit('QUARANTINE_NCR', `Filed Form-NCR-001 ${ncr.ncrNo} for ${ncr.itemDescription}`);
   };
 
-  // --- PURCHASE ORDERS ---
-  const handleSavePO = (po) => {
-    setPurchaseOrders(prev => [po, ...prev]);
-    recordAudit('PO_GENERATED', `Generated PO ${po.poNo} for ${po.supplier} (${po.items.length} items)`);
+  const handleQuickAction = (tab, item = null) => {
+    setPrefilledItem(item);
+    setActiveTab(tab);
   };
 
-  // --- RESET ---
+  const handleImportInventoryCsv = (updates) => {
+    setInventory(prev => prev.map(item => {
+      const update = updates.find(u => u.code === item.code);
+      if (update) return { ...item, currentBalance: update.newBalanceSec };
+      return item;
+    }));
+    recordAudit('CSV_INVENTORY_IMPORT', `Imported ${updates.length} SKU balances via CSV upload.`);
+  };
+
   const handleResetData = () => {
     if (window.confirm("Reset all data to factory seeds?")) {
       setInventory(MASTER_MATERIALS);
@@ -265,24 +274,18 @@ export default function App() {
       setQuarantineList(INITIAL_QUARANTINE);
       setAdjustments(INITIAL_ADJUSTMENTS);
       setAuditLogs(INITIAL_AUDIT_LOGS);
-      setPurchaseOrders([]);
       setActiveTab('dashboard');
     }
   };
 
   const handleExportJson = () => {
-    const data = { inventory, receivingReports, withdrawals, batchOrders, quarantineList, adjustments, auditLogs, purchaseOrders };
+    const data = { inventory, receivingReports, withdrawals, batchOrders, quarantineList, adjustments, auditLogs };
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
     a.download = `JJB_Backup_${new Date().toISOString().slice(0,10)}.json`;
     a.click();
-  };
-
-  const handleQuickAction = (tab, item = null) => {
-    setPrefilledItem(item);
-    setActiveTab(tab);
   };
 
   return (
@@ -298,6 +301,7 @@ export default function App() {
         setIsOffline={setIsOffline}
         queueCount={queueCount}
         pendingBatchCount={pendingBatchCount}
+        pendingBulkApprovalCount={pendingBulkApprovalCount}
         lowStockCount={lowStockCount}
         onQuickEod={() => setActiveTab('eod')}
       />
@@ -307,7 +311,7 @@ export default function App() {
         
         {activeTab === 'receiving' && <ReceivingModule inventory={inventory} onSaveReceiving={handleSaveReceiving} receivingReports={receivingReports} currentRole={currentRole} isMobileMode={isMobileMode} prefilledItem={prefilledItem} />}
 
-        {activeTab === 'issuance' && <IssuanceModule inventory={inventory} onSaveWithdrawal={handleSaveWithdrawal} onApproveBulkRelease={handleApproveBulkRelease} withdrawals={withdrawals} currentRole={currentRole} isMobileMode={isMobileMode} prefilledItem={prefilledItem} />}
+        {activeTab === 'issuance' && <IssuanceModule inventory={inventory} onSaveWithdrawal={handleSaveWithdrawal} onApprovePendingWithdrawal={handleApprovePendingWithdrawal} withdrawals={withdrawals} currentRole={currentRole} isMobileMode={isMobileMode} prefilledItem={prefilledItem} />}
 
         {activeTab === 'batching' && (
           <BatchingWorkbench 
@@ -316,6 +320,7 @@ export default function App() {
             onUpdateOrderStatus={handleUpdateOrderStatus}
             onBulkReleaseOrders={handleBulkReleaseOrders}
             onRequestBulkMaterials={handleRequestBulkMaterials}
+            onApproveBulkFromWorkbench={(order) => handleApprovePendingWithdrawal(order.linkedWithdrawalSlipNo)}
             recipes={MASTER_RECIPES}
             outlets={OUTLETS}
             inventory={inventory}
@@ -328,13 +333,12 @@ export default function App() {
 
         {activeTab === 'reports' && (
           <ReportsModule 
+            inventory={inventory}
             receivingReports={receivingReports}
             withdrawals={withdrawals}
             batchOrders={batchOrders}
             adjustments={adjustments}
-            inventory={inventory}
-            purchaseOrders={purchaseOrders}
-            onSavePO={handleSavePO}
+            onImportInventoryCsv={handleImportInventoryCsv}
           />
         )}
 
@@ -343,7 +347,7 @@ export default function App() {
         {activeTab === 'audit' && <AuditTrailModule auditLogs={auditLogs} onResetData={handleResetData} onExportJson={handleExportJson} />}
       </main>
 
-      <footer className="bg-[#3D1C52] text-white py-4 px-6 text-center text-xs border-t border-[#C8963E]/30 mt-auto">
+      <footer className="bg-[#3D1C52] text-white py-4 px-6 text-center text-xs border-t border-[#C8963E]/30 mt-auto print:hidden">
         <p>Jang-Jang Bakeshop & Kingdom Confectionary Business Lines · Manual of Operations Rev. 4.0 WMS Engine</p>
         <p className="text-[#E5C585] mt-1">Deployed on Cloudflare Pages & Google Apps Script Queue-First Architecture (`₱0.00 / Month` Stack)</p>
       </footer>
