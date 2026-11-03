@@ -122,14 +122,14 @@ export default function Header({
           </div>
 
           {/* Quick EOD Action */}
-          <button
-            onClick={onQuickEod}
-            className="bg-gradient-to-r from-[#C8963E] to-[#E5C585] hover:from-[#b58330] hover:to-[#d4b06f] text-[#240e32] font-bold text-xs px-3 py-1.5 rounded shadow flex items-center gap-1.5 transition"
-            title="Open Automated 17:00 End-of-Day Settlement Report"
-          >
-            <Send size={13} />
-            <span className="hidden md:inline">17:00</span> EOD Report
-          </button>
+        <button
+          onClick={onQuickEod}
+          className="bg-gradient-to-r from-[#C8963E] to-[#E5C585] hover:from-[#b58330] hover:to-[#d4b06f] text-[#240e32] font-bold text-xs px-3 py-1.5 rounded shadow flex items-center gap-1.5 transition"
+          title="Open Automated 23:45 End-of-Day Settlement Report"
+        >
+          <Send size={13} />
+          <span className="hidden md:inline">23:45</span> EOD Report
+        </button>
         </div>
       </div>
 
