@@ -34,7 +34,6 @@ export default function App() {
   const [lastAutoDispatchTime, setLastAutoDispatchTime] = useState(null);
   const [liveToast, setLiveToast] = useState(null);
 
-  // Hydrate state from localStorage so Jade's & Romeo's November 2026+ updates persist across browser refreshes
   const loadSaved = (key, fallback) => {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
@@ -59,32 +58,21 @@ export default function App() {
   const lastPolledTimestampRef = useRef(0);
   const processedQueueIdsRef = useRef(new Set());
 
-  // Save state changes to localStorage
   useEffect(() => {
     try {
       localStorage.setItem(
         STORAGE_KEY,
         JSON.stringify({
-          inventory,
-          receivingReports,
-          withdrawals,
-          batchOrders,
-          quarantineList,
-          adjustments,
-          auditLogs
+          inventory, receivingReports, withdrawals, batchOrders, quarantineList, adjustments, auditLogs
         })
       );
-    } catch (e) {
-      console.error('Local storage persistence warning:', e);
-    }
+    } catch (e) {}
   }, [inventory, receivingReports, withdrawals, batchOrders, quarantineList, adjustments, auditLogs]);
 
-  // Header Badge Counts
   const lowStockCount = inventory.filter(i => i.currentBalance <= i.threshold).length;
   const pendingBatchCount = batchOrders.filter(b => b.status === 'PENDING_BATCHING').length;
-  const pendingJadeApprovalCount = withdrawals.filter(w => w.status === 'PENDING_APPROVAL').length;
+  const pendingBulkApprovalCount = withdrawals.filter(w => w.status === 'PENDING_APPROVAL').length;
 
-  // Offline Queue Sync Drain Simulation
   useEffect(() => {
     if (queueCount > 0 && !isOffline) {
       const timer = setTimeout(() => setQueueCount(prev => Math.max(0, prev - 1)), 2000);
@@ -92,7 +80,6 @@ export default function App() {
     }
   }, [queueCount, isOffline]);
 
-  // --- AUTOMATIC CLOUDFLARE WORKER + GOOGLE APPS SCRIPT DISPATCH BRIDGE ---
   const recordAudit = (action, details, payloadData = {}) => {
     const queueId = `Q-${Date.now()}-${Math.random().toString(36).slice(2, 6).toUpperCase()}`;
     processedQueueIdsRef.current.add(queueId);
@@ -127,13 +114,11 @@ export default function App() {
         payload: payloadData
       };
 
-      // 1. Primary: Dispatch to Cloudflare Worker API (/api/sync), which dual-writes to Edge/D1 + Google Sheets
       fetch(WORKER_SYNC_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(envelope)
       }).catch(() => {
-        // 2. Fallback: Direct POST to Google Apps Script Web App if running locally without Worker
         fetch(GAS_WEB_APP_URL, {
           method: 'POST',
           headers: { 'Content-Type': 'text/plain;charset=utf-8' },
@@ -144,7 +129,6 @@ export default function App() {
     }
   };
 
-  // --- REAL-TIME OUTLET PORTAL & MULTI-TERMINAL AUTO-POLLING (Every 4 Seconds) ---
   useEffect(() => {
     if (isOffline) return;
 
@@ -188,7 +172,6 @@ export default function App() {
     };
 
     const pollEdgeWorkerAndInbox = async () => {
-      // 1. Check same-domain localStorage inbox (instantaneous on same device)
       try {
         const localInbox = JSON.parse(localStorage.getItem('JJB_PORTAL_INBOX') || '[]');
         if (localInbox.length > 0) {
@@ -197,7 +180,6 @@ export default function App() {
         }
       } catch (e) {}
 
-      // 2. Poll Cloudflare Worker Edge API (/api/sync) for cross-device Outlet Portal submissions
       try {
         const res = await fetch(`${WORKER_SYNC_URL}?since=${lastPolledTimestampRef.current}`);
         if (res.ok) {
@@ -214,7 +196,6 @@ export default function App() {
     return () => clearInterval(pollTimer);
   }, [isOffline]);
 
-  // --- AUTOMATED 23:45 PHT NIGHTLY EOD SETTLEMENT REPORT WATCHER ---
   useEffect(() => {
     const checkNightly2345Trigger = () => {
       const nowManila = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Manila' }));
@@ -228,7 +209,7 @@ export default function App() {
         setLastAutoDispatchTime(stamp);
         recordAudit(
           'AUTOMATED_EOD_2345_DISPATCH',
-          `Scheduled 23:45 PHT EOD Settlement Report (Inbound Receiving, Floor Withdrawals, and 3-Step Batching Lifecycle) automatically compiled and queued to ${EOD_EMAIL_RECIPIENTS.join(', ')}`,
+          `Scheduled 23:45 PHT EOD Settlement Report automatically compiled and queued to ${EOD_EMAIL_RECIPIENTS.join(', ')}`,
           { date: dateKey, recipients: EOD_EMAIL_RECIPIENTS }
         );
       }
@@ -238,7 +219,6 @@ export default function App() {
     return () => clearInterval(intervalId);
   }, [receivingReports, withdrawals, batchOrders]);
 
-  // 1. Save Inbound Receiving (Form-REC-001)
   const handleSaveReceiving = (report) => {
     setReceivingReports(prev => [report, ...prev]);
     setInventory(prev => prev.map(invItem => {
@@ -264,47 +244,29 @@ export default function App() {
       }
       return invItem;
     }));
-    recordAudit(
-      'INBOUND_RECEIVING',
-      `Logged Form-REC-001 ${report.reportNo} from ${report.supplier} valued at ₱${report.totalPaid?.toLocaleString()}`,
-      report
-    );
+    recordAudit('INBOUND_RECEIVING', `Logged Form-REC-001 ${report.reportNo} from ${report.supplier}`, report);
     setActiveTab('dashboard');
   };
 
-  // 2. Save Direct Stock Withdrawal (Form-WAR-001)
   const handleSaveWithdrawal = (slip) => {
     setWithdrawals(prev => [slip, ...prev]);
     if (slip.status !== 'PENDING_APPROVAL') {
       setInventory(prev => prev.map(invItem => {
         const issuedItem = slip.items.find(i => i.materialCode === invItem.code);
         if (issuedItem) {
-          return {
-            ...invItem,
-            currentBalance: Number((invItem.currentBalance - issuedItem.qtyIssuedSec).toFixed(3))
-          };
+          return { ...invItem, currentBalance: Number((invItem.currentBalance - issuedItem.qtyIssuedSec).toFixed(3)) };
         }
         return invItem;
       }));
     }
-    recordAudit(
-      'STOCK_OUT_ISSUANCE',
-      `Issued Form-WAR-001 ${slip.slipNo} to ${slip.requestingEntity}`,
-      slip
-    );
+    recordAudit('STOCK_OUT_ISSUANCE', `Issued Form-WAR-001 ${slip.slipNo} to ${slip.requestingEntity}`, slip);
   };
 
-  // 3. Step 1 of Batching: Intake Outlet Order (Form-PRO-001)
   const handleSaveBatchOrder = (newOrder) => {
     setBatchOrders(prev => [newOrder, ...prev]);
-    recordAudit(
-      'BATCH_REQUISITION',
-      `Created Form-PRO-001 (${newOrder.orderId}) for ${newOrder.batchMultiplier} Kits of ${newOrder.recipeName} to ${newOrder.outletName}`,
-      newOrder
-    );
+    recordAudit('BATCH_REQUISITION', `Created Form-PRO-001 (${newOrder.orderId}) for ${newOrder.batchMultiplier} Kits to ${newOrder.outletName}`, newOrder);
   };
 
-  // 4. Step 2A of Batching: Romeo Requests Bulk Raw Materials from Jade (Creates PENDING_APPROVAL Slip in Tab 3)
   const handleRequestBulkMaterials = (order) => {
     const recipe = MASTER_RECIPES.find(r => r.sku === order.recipeSku);
     if (!recipe) return;
@@ -312,9 +274,8 @@ export default function App() {
     const bulkItems = recipe.ingredients
       .filter(i => !i.isPackaging && !i.isWater && !i.isAsNeeded && i.code !== 'WATER')
       .map(ing => {
-        const requiredSec = Number(((ing.gramsPerBatch * order.batchMultiplier) / 1000).toFixed(3)); // g -> kg
+        const requiredSec = Number(((ing.gramsPerBatch * order.batchMultiplier) / 1000).toFixed(3));
         const mat = inventory.find(m => m.code === ing.code);
-
         return {
           materialCode: ing.code,
           name: ing.name,
@@ -353,76 +314,36 @@ export default function App() {
     setWithdrawals(prev => [newSlip, ...prev]);
     setBatchOrders(prev => prev.map(o => o.orderId === order.orderId ? updatedOrder : o));
 
-    recordAudit(
-      'BULK_REQUISITION_REQUESTED',
-      `Romeo B. Malusay submitted Bulk Material Pull Request (${newSlipNo}) to Jade Q. Dela Cruz for Order ${order.orderId} (${order.batchMultiplier} Kits of ${order.recipeName}).`,
-      { ...newSlip, orderId: order.orderId, bulkRequisitionStatus: 'PENDING_JADE_APPROVAL', linkedWithdrawalSlipNo: newSlipNo }
-    );
-
-    alert(
-      `Bulk Material Pull Request (${newSlipNo}) sent to Terminal 1! Jade Q. Dela Cruz can now click "Approve & Release Bulk Lots (FEFO)" in Tab 3 (Stock Release & Issuance) to deduct inventory and unlock Romeo's Scaling Workbench.`
-    );
+    recordAudit('BULK_REQUISITION_REQUESTED', `Romeo submitted Bulk Pull Request (${newSlipNo}) to Jade for Order ${order.orderId}`, { ...newSlip, orderId: order.orderId });
+    alert(`Bulk Material Pull Request (${newSlipNo}) sent to Terminal 1! Jade can now approve it in Tab 3.`);
   };
 
-  // 4B. Step 2B of Batching: Jade Approves & Releases Bulk Lots at Dutch Door (Deducts Inventory & Unlocks Romeo's Scale Button)
   const handleApprovePendingWithdrawal = (slipNo) => {
     const targetSlip = withdrawals.find(w => w.slipNo === slipNo);
     if (!targetSlip || targetSlip.status !== 'PENDING_APPROVAL') return;
 
-    // Deduct bulk ingredients from perpetual warehouse inventory
     setInventory(prev => prev.map(invItem => {
       const issuedItem = targetSlip.items.find(i => i.materialCode === invItem.code);
       if (issuedItem) {
-        return {
-          ...invItem,
-          currentBalance: Number((invItem.currentBalance - issuedItem.qtyIssuedSec).toFixed(3))
-        };
+        return { ...invItem, currentBalance: Number((invItem.currentBalance - issuedItem.qtyIssuedSec).toFixed(3)) };
       }
       return invItem;
     }));
 
-    const approvedSlip = {
-      ...targetSlip,
-      status: 'ISSUED & RECONCILED',
-      issuedBy: 'Jade Q. Dela Cruz (Warehouse Supervisor)'
-    };
-
-    // Mark Form-WAR-001 slip as ISSUED & RECONCILED
+    const approvedSlip = { ...targetSlip, status: 'ISSUED & RECONCILED', issuedBy: 'Jade Q. Dela Cruz (Warehouse Supervisor)' };
     setWithdrawals(prev => prev.map(w => w.slipNo === slipNo ? approvedSlip : w));
 
-    // Unlock Romeo's "2. Scale & Kit Recipe Mix" button on BatchingWorkbench
     setBatchOrders(prev => prev.map(o => {
-      if (
-        o.linkedWithdrawalSlipNo === slipNo ||
-        o.orderId === targetSlip.linkedOrderId ||
-        (targetSlip.purpose && targetSlip.purpose.includes(o.orderId))
-      ) {
-        return {
-          ...o,
-          bulkMaterialsRequested: true,
-          bulkMaterialsApprovedByJade: true,
-          bulkRequisitionStatus: 'BULK_ISSUED_BY_JADE',
-          linkedWithdrawalSlipNo: slipNo
-        };
+      if (o.linkedWithdrawalSlipNo === slipNo || o.orderId === targetSlip.linkedOrderId) {
+        return { ...o, bulkMaterialsRequested: true, bulkMaterialsApprovedByJade: true, bulkRequisitionStatus: 'BULK_ISSUED_BY_JADE', linkedWithdrawalSlipNo: slipNo };
       }
       return o;
     }));
 
-    recordAudit(
-      'BULK_REQUISITION_APPROVED',
-      `Jade Q. Dela Cruz approved Form-WAR-001 (${slipNo}), deducted FEFO bulk lots, and transferred materials across the Dutch door to Romeo B. Malusay.`,
-      approvedSlip
-    );
+    recordAudit('BULK_REQUISITION_APPROVED', `Jade approved Form-WAR-001 (${slipNo}), deducted FEFO lots, and transferred to Romeo.`, approvedSlip);
   };
 
-  // 5. Step 3 of Batching: Romeo Scales/Kits (Form-ING-001) & Releases to Outlet
-  const handleUpdateOrderStatus = (
-    orderId,
-    newStatus,
-    batchTagId = null,
-    actualBatchedKg = 0,
-    scaleSealUsed = 'Seal #798073 (Bench Scale #1)'
-  ) => {
+  const handleUpdateOrderStatus = (orderId, newStatus, batchTagId = null, actualBatchedKg = 0, scaleSealUsed = 'Seal #798073 (Bench Scale #1)') => {
     let updatedOrderSnapshot = null;
 
     setBatchOrders(prev => prev.map(order => {
@@ -439,7 +360,7 @@ export default function App() {
           batchTagId: batchTagId || order.batchTagId,
           actualBatchedKg: actualBatchedKg || order.actualBatchedKg,
           actualBatchedUnits: order.requestedQtyPcs,
-          scaleUsed: scaleSealUsed || order.scaleUsed || 'Seal #798073 (Bench Scale #1)',
+          scaleUsed: scaleSealUsed || order.scaleUsed,
           sifter40MeshChecked: true,
           batchedAt: newStatus === 'BATCHED_KITTED' ? new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : order.batchedAt,
           batchedBy: newStatus === 'BATCHED_KITTED' ? 'Romeo B. Malusay' : order.batchedBy,
@@ -451,19 +372,8 @@ export default function App() {
       return order;
     }));
 
-    if (newStatus === 'BATCHED_KITTED') {
-      recordAudit(
-        'BATCH_KITTED',
-        `Romeo B. Malusay certified Form-ING-001 scaling (${batchTagId}, ${actualBatchedKg} kg on ${scaleSealUsed}) for Order ${orderId}`,
-        updatedOrderSnapshot || { orderId, status: newStatus, batchTagId, actualBatchedKg, scaleUsed: scaleSealUsed }
-      );
-    } else if (newStatus === 'RELEASED') {
-      recordAudit(
-        'BATCH_RELEASED',
-        `Released sealed batch kit for Order ${orderId} to outlet logistics`,
-        updatedOrderSnapshot || { orderId, status: newStatus }
-      );
-    }
+    if (newStatus === 'BATCHED_KITTED') recordAudit('BATCH_KITTED', `Romeo certified Form-ING-001 scaling (${batchTagId}, ${actualBatchedKg} kg) for Order ${orderId}`, updatedOrderSnapshot);
+    if (newStatus === 'RELEASED') recordAudit('BATCH_RELEASED', `Released sealed batch kit for Order ${orderId} to outlet logistics`, updatedOrderSnapshot);
   };
 
   const handleBulkReleaseOrders = () => {
@@ -484,11 +394,7 @@ export default function App() {
       return order;
     }));
 
-    recordAudit(
-      'BULK_BATCH_RELEASE',
-      `Collectively released ${releasedBatchPayload.length} completed kitted batches to outlet drivers`,
-      { orders: releasedBatchPayload }
-    );
+    recordAudit('BULK_BATCH_RELEASE', `Collectively released ${releasedBatchPayload.length} completed kitted batches to outlet drivers`, { orders: releasedBatchPayload });
   };
 
   const handleSaveAdjustment = (adj) => {
@@ -496,30 +402,18 @@ export default function App() {
     setInventory(prev => prev.map(invItem => {
       if (invItem.code === adj.materialCode) {
         const isOut = adj.type.includes('OUT');
-        return {
-          ...invItem,
-          currentBalance: Number((invItem.currentBalance + (isOut ? -adj.qtySec : adj.qtySec)).toFixed(3))
-        };
+        return { ...invItem, currentBalance: Number((invItem.currentBalance + (isOut ? -adj.qtySec : adj.qtySec)).toFixed(3)) };
       }
       return invItem;
     }));
-    recordAudit(
-      'INVENTORY_ADJUSTMENT',
-      `Logged ${adj.type} for ${adj.materialCode} (${adj.qtySec} ${adj.uom})`,
-      adj
-    );
+    recordAudit('INVENTORY_ADJUSTMENT', `Logged ${adj.type} for ${adj.materialCode} (${adj.qtySec} ${adj.uom})`, adj);
   };
 
   const handleSaveQuarantine = (ncr) => {
     setQuarantineList(prev => [ncr, ...prev]);
-    recordAudit(
-      'QUARANTINE_NCR',
-      `Filed Form-NCR-001 ${ncr.ncrNo} for ${ncr.itemDescription}`,
-      ncr
-    );
+    recordAudit('QUARANTINE_NCR', `Filed Form-NCR-001 ${ncr.ncrNo} for ${ncr.itemDescription}`, ncr);
   };
 
-  // CSV Bulk Inventory Update Handler (Supports both newBalanceSec and currentBalance keys)
   const handleImportInventoryCsv = (updates) => {
     setInventory(prev => prev.map(item => {
       const match = updates.find(u => u.code.toUpperCase() === item.code.toUpperCase());
@@ -531,11 +425,7 @@ export default function App() {
         unitCost: match.unitCost !== undefined ? match.unitCost : item.unitCost
       };
     }));
-    recordAudit(
-      'CSV_INVENTORY_IMPORT',
-      `Bulk updated ${updates.length} SKU balances via CSV import`,
-      { count: updates.length }
-    );
+    recordAudit('CSV_INVENTORY_IMPORT', `Bulk updated ${updates.length} SKU balances via CSV import`, { count: updates.length });
   };
 
   const handleQuickAction = (tab, item = null) => {
@@ -580,12 +470,11 @@ export default function App() {
         setIsOffline={setIsOffline}
         queueCount={queueCount}
         pendingBatchCount={pendingBatchCount}
-        pendingJadeApprovalCount={pendingJadeApprovalCount}
+        pendingBulkApprovalCount={pendingBulkApprovalCount}
         lowStockCount={lowStockCount}
         onQuickEod={() => setActiveTab('eod')}
       />
 
-      {/* Live Incoming Order Notification Toast from Outlet Portal */}
       {liveToast && (
         <div className="bg-[#1E7A3E] text-white px-4 py-2.5 text-xs font-bold text-center shadow-lg animate-bounce flex items-center justify-center gap-2 print:hidden">
           <span>🔔 LIVE OUTLET PORTAL SYNC: {liveToast}</span>
@@ -594,95 +483,23 @@ export default function App() {
       )}
 
       <main className="flex-1 p-4 md:p-6 max-w-7xl mx-auto w-full">
-        {activeTab === 'dashboard' && (
-          <ExecutiveDashboard 
-            inventory={inventory} 
-            isMobileMode={isMobileMode} 
-            onQuickAction={handleQuickAction} 
-            storageRooms={STORAGE_ROOMS} 
-          />
-        )}
-        
-        {activeTab === 'receiving' && (
-          <ReceivingModule 
-            inventory={inventory} 
-            onSaveReceiving={handleSaveReceiving} 
-            receivingReports={receivingReports} 
-            currentRole={currentRole} 
-            isMobileMode={isMobileMode} 
-            prefilledItem={prefilledItem} 
-          />
-        )}
-
-        {activeTab === 'issuance' && (
-          <IssuanceModule 
-            inventory={inventory} 
-            onSaveWithdrawal={handleSaveWithdrawal} 
-            onApprovePendingWithdrawal={handleApprovePendingWithdrawal}
-            withdrawals={withdrawals} 
-            currentRole={currentRole} 
-            isMobileMode={isMobileMode} 
-            prefilledItem={prefilledItem} 
-          />
-        )}
-
+        {activeTab === 'dashboard' && <ExecutiveDashboard inventory={inventory} isMobileMode={isMobileMode} onQuickAction={handleQuickAction} storageRooms={STORAGE_ROOMS} />}
+        {activeTab === 'receiving' && <ReceivingModule inventory={inventory} onSaveReceiving={handleSaveReceiving} receivingReports={receivingReports} currentRole={currentRole} isMobileMode={isMobileMode} prefilledItem={prefilledItem} />}
+        {activeTab === 'issuance' && <IssuanceModule inventory={inventory} onSaveWithdrawal={handleSaveWithdrawal} onApprovePendingWithdrawal={handleApprovePendingWithdrawal} withdrawals={withdrawals} currentRole={currentRole} isMobileMode={isMobileMode} prefilledItem={prefilledItem} />}
         {activeTab === 'batching' && (
           <BatchingWorkbench 
-            batchOrders={batchOrders}
-            onSaveBatchOrder={handleSaveBatchOrder}
-            onUpdateOrderStatus={handleUpdateOrderStatus}
-            onBulkReleaseOrders={handleBulkReleaseOrders}
-            onRequestBulkMaterials={handleRequestBulkMaterials}
-            recipes={MASTER_RECIPES}
-            outlets={OUTLETS}
-            inventory={inventory}
-            currentRole={currentRole}
-            isMobileMode={isMobileMode}
+            batchOrders={batchOrders} onSaveBatchOrder={handleSaveBatchOrder} onUpdateOrderStatus={handleUpdateOrderStatus} onBulkReleaseOrders={handleBulkReleaseOrders}
+            onRequestBulkMaterials={handleRequestBulkMaterials} recipes={MASTER_RECIPES} outlets={OUTLETS} inventory={inventory} currentRole={currentRole} isMobileMode={isMobileMode}
           />
         )}
-
-        {activeTab === 'adjustments' && (
-          <AdjustmentsModule 
-            inventory={inventory} 
-            adjustments={adjustments} 
-            quarantineList={quarantineList} 
-            onSaveAdjustment={handleSaveAdjustment} 
-            onSaveQuarantine={handleSaveQuarantine} 
-            currentRole={currentRole} 
-          />
-        )}
-
+        {activeTab === 'adjustments' && <AdjustmentsModule inventory={inventory} adjustments={adjustments} quarantineList={quarantineList} onSaveAdjustment={handleSaveAdjustment} onSaveQuarantine={handleSaveQuarantine} currentRole={currentRole} />}
         {activeTab === 'reports' && (
-          <ReportsModule 
-            inventory={inventory}
-            receivingReports={receivingReports}
-            withdrawals={withdrawals}
-            batchOrders={batchOrders}
-            adjustments={adjustments}
-            onImportInventoryCsv={handleImportInventoryCsv}
-          />
+          <ReportsModule inventory={inventory} receivingReports={receivingReports} withdrawals={withdrawals} batchOrders={batchOrders} adjustments={adjustments} onImportInventoryCsv={handleImportInventoryCsv} />
         )}
-
         {activeTab === 'eod' && (
-          <EodReportModule 
-            receivingReports={receivingReports} 
-            withdrawals={withdrawals} 
-            batchOrders={batchOrders} 
-            inventory={inventory} 
-            quarantineList={quarantineList} 
-            currentRole={currentRole} 
-            onRecordAudit={recordAudit}
-            lastAutoDispatchTime={lastAutoDispatchTime}
-          />
+          <EodReportModule receivingReports={receivingReports} withdrawals={withdrawals} batchOrders={batchOrders} inventory={inventory} quarantineList={quarantineList} currentRole={currentRole} onRecordAudit={recordAudit} lastAutoDispatchTime={lastAutoDispatchTime} />
         )}
-
-        {activeTab === 'audit' && (
-          <AuditTrailModule 
-            auditLogs={auditLogs} 
-            onResetData={handleResetData} 
-            onExportJson={handleExportJson} 
-          />
-        )}
+        {activeTab === 'audit' && <AuditTrailModule auditLogs={auditLogs} onResetData={handleResetData} onExportJson={handleExportJson} />}
       </main>
 
       <footer className="bg-[#3D1C52] text-white py-4 px-6 text-center text-xs border-t border-[#C8963E]/30 mt-auto print:hidden">
