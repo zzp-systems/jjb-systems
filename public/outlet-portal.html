@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>JJB Outlet & Production Line Requisition Portal (Form-PRO-001 / Form-WAR-001)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  <style>
+    body { background-color: #FAF6EE; color: #2A1B2E; font-family: 'Segoe UI', system-ui, sans-serif; }
+    .font-serif-jjb { font-family: Georgia, 'Times New Roman', serif; }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+  <!-- TOP HEADER -->
+  <header class="bg-[#3D1C52] text-white border-b-2 border-[#C8963E] shadow-lg sticky top-0 z-30">
+    <div class="max-w-5xl mx-auto px-4 py-3 flex flex-wrap justify-between items-center gap-3">
+      <div class="flex items-center gap-3">
+        <img src="https://raw.githubusercontent.com/zzp-systems/jjb-systems/refs/heads/main/jjb-logo-transaparent.png" alt="JJB" class="w-10 h-10 rounded-full bg-white p-1 border border-[#C8963E]" onerror="this.style.display='none'" />
+        <div>
+          <div class="flex items-center gap-2">
+            <h1 class="font-serif-jjb font-bold text-base md:text-lg text-white">Jang-Jang Bakeshop · Requisition Portal</h1>
+            <span class="bg-[#C8963E] text-[#240e32] text-[10px] font-bold px-2 py-0.5 rounded uppercase">Live Sync</span>
+          </div>
+          <p class="text-[11px] text-[#E5C585]">Direct Order Dispatch to Jade Q. Dela Cruz (Warehouse) & Romeo B. Malusay (Batching)</p>
+        </div>
+      </div>
+
+      <div id="syncBadge" class="bg-[#1E7A3E] text-white text-xs font-bold px-3 py-1.5 rounded-full flex items-center gap-1.5 shadow">
+        <i class="fa-solid fa-bolt"></i>
+        <span id="syncBadgeText">CLOUDFLARE + SHEETS READY</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN CONTENT -->
+  <main class="flex-1 max-w-5xl w-full mx-auto p-4 md:p-6 space-y-6">
+
+    <!-- STEP 1: SELECT OUTLET OR PRODUCTION LINE -->
+    <section class="bg-white p-5 rounded-2xl border border-[#E2D1B8] shadow-sm space-y-4">
+      <div class="border-b pb-2 flex justify-between items-center flex-wrap gap-2">
+        <h2 class="font-serif-jjb font-bold text-base text-[#5B2E7A]">
+          <i class="fa-solid fa-store mr-1.5"></i> 1. Select Your Outlet or Production Line
+        </h2>
+        <span class="text-[11px] font-mono text-gray-500">SOP-WAR-002 / SOP-PRO-004 Governance</span>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
+        <div>
+          <label class="block font-bold text-gray-700 mb-1">Requesting Facility / Line</label>
+          <select id="facilitySelect" onchange="handleFacilityChange()" class="w-full p-2.5 border rounded-lg bg-[#FAF6EE] font-bold text-[#3D1C52]">
+            <option value="laurice-delicacies" data-type="OUTLET" data-person="Anecita S. Blase / Raffy Boy P. Cortes" data-driver="Roberto S. Blase">Laurice Delicacies Outlet (Bankerohan)</option>
+            <option value="pan-de-verde" data-type="OUTLET" data-person="Jhoanna Tejano / Feliciano T. Gomera" data-driver="Othniel Tilan">Pan de Verde Outlet (Communal)</option>
+            <option value="indangan-biscocho" data-type="INTERNAL" data-person="Alwen Hermogeno / Irene C. Capada" data-driver="Internal Grey Zone Transfer">Indangan — Biscocho Commercial Line</option>
+            <option value="indangan-otap" data-type="INTERNAL" data-person="Reymark V. Albia / Zillah F. Tilan" data-driver="Internal Grey Zone Transfer">Indangan — Otap Laminated Line</option>
+            <option value="indangan-glaze" data-type="INTERNAL" data-person="Armando P. Lendong (Glaze Preparer)" data-driver="Butter Room Glaze Partition">Indangan — Buttermilk Sweet Glaze (Banya)</option>
+            <option value="mess-hall" data-type="INTERNAL" data-person="Vicky Albino / Charita Datig" data-driver="Direct Kitchen Pickup">Indangan — Mess Hall (Workforce Kitchen)</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block font-bold text-gray-700 mb-1">Requested By (Authorized Personnel)</label>
+          <input id="requestedByInput" type="text" value="Anecita S. Blase / Raffy Boy P. Cortes" class="w-full p-2.5 border rounded-lg font-medium" />
+        </div>
+
+        <div>
+          <label class="block font-bold text-gray-700 mb-1">Needed Delivery / Shift Date</label>
+          <input id="targetDateInput" type="date" class="w-full p-2.5 border rounded-lg font-mono font-bold text-[#5B2E7A]" />
+        </div>
+      </div>
+
+      <!-- Mode Switcher (Outlets locked to Kitted Recipes per SOP-WAR-002 Sec 1.2) -->
+      <div class="pt-2 flex flex-wrap items-center justify-between gap-3 border-t">
+        <div class="flex gap-2">
+          <button id="btnModeKit" type="button" onclick="setOrderMode('KIT')" class="px-4 py-2 rounded-lg text-xs font-bold bg-[#3D1C52] text-white shadow">
+            <i class="fa-solid fa-scale-balanced mr-1.5"></i> Order Recipe-Batched Ingredient Kits (Form-PRO-001)
+          </button>
+          <button id="btnModeRaw" type="button" onclick="setOrderMode('RAW')" class="px-4 py-2 rounded-lg text-xs font-bold bg-gray-100 text-gray-600 hover:bg-gray-200">
+            <i class="fa-solid fa-boxes-stacked mr-1.5"></i> Request Direct Raw Materials (Form-WAR-001)
+          </button>
+        </div>
+        <p id="outletPolicyNotice" class="text-[11px] text-amber-800 bg-amber-50 border border-amber-300 px-3 py-1 rounded font-semibold">
+          <i class="fa-solid fa-shield-halved mr-1"></i> SOP-WAR-002 Mandate: Retail outlets receive pre-scaled, unitized Recipe Kits from Romeo B. Malusay.
+        </p>
+      </div>
+    </section>
+
+    <!-- MODE A: ORDER RECIPE-BATCHED INGREDIENT KITS (Form-PRO-001 -> Romeo & Jade) -->
+    <section id="sectionKitOrder" class="bg-white p-5 rounded-2xl border border-[#E2D1B8] shadow-sm space-y-5">
+      <div class="border-b pb-3 flex justify-between items-center flex-wrap gap-2">
+        <div>
+          <span class="font-mono text-[11px] font-bold bg-[#C8963E] text-[#240e32] px-2 py-0.5 rounded">Form-PRO-001</span>
+          <h3 class="font-serif-jjb font-bold text-lg text-[#3D1C52] mt-1">Order Recipe-Batched Ingredient Mix Kits</h3>
+          <p class="text-xs text-gray-500">Sent directly to Romeo B. Malusay's Workbench & Jade Q. Dela Cruz's Bulk Pull Queue</p>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+        <div class="md:col-span-2">
+          <label class="block font-bold text-gray-700 mb-1">Select Approved Master Recipe Kit</label>
+          <select id="recipeSelect" onchange="renderKitBreakdown()" class="w-full p-2.5 border rounded-lg bg-white font-bold text-[#3D1C52]">
+            <option value="BRD-PAN-3KG">BRD-PAN-3KG — Commercial Pandesal Batched Mix (3-Kilo Flour Yield Kit · ~85 pcs)</option>
+            <option value="BRD-PAN-6KG">BRD-PAN-6KG — Commercial Pandesal Batched Mix (6-Kilo Flour Yield Kit · ~170 pcs)</option>
+            <option value="BRD-UBE-001">BRD-UBE-001 — Special Ube Cheese Pandesal Kit (10 kg Flour Basis · 300 pcs)</option>
+            <option value="BRD-MON-001">BRD-MON-001 — Classic Monay & Sweet Loaf Kit (12.5 kg Flour Basis · 250 pcs)</option>
+            <option value="PST-ENS-001">PST-ENS-001 — Special Butter Ensaymada Kit (10 kg Flour Basis · 200 pcs)</option>
+            <option value="BIS-001">BIS-001 — Biscocho Commercial Batch Kit (25 kg Flour Basis · 1,000 pcs)</option>
+            <option value="OTP-001">OTP-001 — Otap Layered Laminated Pastry Kit (25 kg Flour Basis · 1,200 pcs)</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block font-bold text-gray-700 mb-1">Number of Kits Requested</label>
+          <input id="kitMultiplierInput" type="number" min="1" step="1" value="4" oninput="renderKitBreakdown()" class="w-full p-2.5 border rounded-lg font-mono font-bold text-base text-[#5B2E7A]" />
+          <span id="kitSummarySubtext" class="text-[11px] text-green-700 font-bold block mt-1"></span>
+        </div>
+      </div>
+
+      <div>
+        <label class="block font-bold text-gray-700 mb-1 text-xs">Delivery & Mixing Notes for Romeo / Jade</label>
+        <input id="kitNotesInput" type="text" placeholder="e.g. Pack into 4 separate sealed 3kg-yield HDPE kits for morning delivery." class="w-full p-2.5 border rounded-lg text-xs" />
+      </div>
+
+      <!-- Auto-Calculated Kit Breakdown Table -->
+      <div class="bg-[#FAF6EE] p-4 rounded-xl border border-[#E2D1B8] space-y-2">
+        <div class="flex justify-between items-center">
+          <h4 class="font-serif-jjb font-bold text-xs text-[#5B2E7A]">Exact Scaled Ingredient Breakdown for Romeo B. Malusay</h4>
+          <span id="totalKitWeightBadge" class="font-mono text-xs font-bold text-[#1E7A3E]"></span>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs bg-white rounded border">
+            <thead class="bg-[#3D1C52] text-white">
+              <tr>
+                <th class="p-2">SKU Code</th>
+                <th class="p-2">Ingredient Component</th>
+                <th class="p-2">Per 1 Kit Standard</th>
+                <th class="p-2 text-right">Total Scaled for Order</th>
+                <th class="p-2 text-right">Warehouse Pull (kg)</th>
+              </tr>
+            </thead>
+            <tbody id="kitBreakdownBody" class="divide-y"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="flex justify-end">
+        <button type="button" onclick="submitKitRequisition()" class="bg-[#1E7A3E] hover:bg-[#165c2f] text-white font-bold text-xs px-6 py-3 rounded-xl shadow-lg flex items-center gap-2 transition">
+          <i class="fa-solid fa-paper-plane"></i> Submit Kit Order to Warehouse & Batching Workbench
+        </button>
+      </div>
+    </section>
+
+    <!-- MODE B: DIRECT RAW MATERIAL WITHDRAWAL REQUEST (Form-WAR-001 -> Jade) -->
+    <section id="sectionRawWithdrawal" class="hidden bg-white p-5 rounded-2xl border border-[#E2D1B8] shadow-sm space-y-5">
+      <div class="border-b pb-3">
+        <span class="font-mono text-[11px] font-bold bg-[#5B2E7A] text-white px-2 py-0.5 rounded">Form-WAR-001</span>
+        <h3 class="font-serif-jjb font-bold text-lg text-[#3D1C52] mt-1">Direct Production Line Raw Material Withdrawal Request</h3>
+        <p class="text-xs text-gray-500">Sent directly to Jade Q. Dela Cruz's Pending Approval Queue in Tab 3 (Stock Release & Issuance)</p>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+        <div>
+          <label class="block font-bold text-gray-700 mb-1">Material SKU to Request</label>
+          <select id="rawSkuSelect" class="w-full p-2.5 border rounded-lg bg-white font-medium">
+            <option value="RM-FLR-003" data-name="1st Class Hard Flour (Rossa)" data-uom="kg" data-room="Dry Room 1">RM-FLR-003 — 1st Class Hard Flour (Rossa) [kg]</option>
+            <option value="RM-FLR-001" data-name="Continental All Purpose Flour" data-uom="kg" data-room="Dry Room 1">RM-FLR-001 — Continental All Purpose Flour [kg]</option>
+            <option value="RM-FLR-002" data-name="3rd Class Isla Flour" data-uom="kg" data-room="Dry Room 1">RM-FLR-002 — 3rd Class Isla Flour [kg]</option>
+            <option value="RM-SWT-001" data-name="Crystal Brown Sugar" data-uom="kg" data-room="Dry Room 1">RM-SWT-001 — Crystal Brown Sugar [kg]</option>
+            <option value="RM-SWT-002" data-name="Refined White Sugar (Busco)" data-uom="kg" data-room="Dry Room 1">RM-SWT-002 — Refined White Sugar (Busco) [kg]</option>
+            <option value="RM-FAT-001" data-name="Buttercup Margarine / Butter" data-uom="kg" data-room="Cold Room">RM-FAT-001 — Buttercup Margarine / Butter [kg]</option>
+            <option value="RM-FAT-003" data-name="Vegetable Shortening (Sunny Suy)" data-uom="kg" data-room="Wet Room">RM-FAT-003 — Vegetable Shortening (Sunny Suy) [kg]</option>
+            <option value="RM-FAT-004" data-name="Alpha Margarine" data-uom="kg" data-room="Wet Room">RM-FAT-004 — Alpha Margarine [kg]</option>
+            <option value="RM-DRY-001" data-name="Fresh Farm Eggs" data-uom="pcs" data-room="Wet Room">RM-DRY-001 — Fresh Farm Eggs [pcs]</option>
+            <option value="RM-DRY-002" data-name="Master Chef Condensada (1kg Tin)" data-uom="kg" data-room="Wet Room">RM-DRY-002 — Master Chef Condensada [kg]</option>
+            <option value="RM-DRY-003" data-name="Jersey Evaporada (370ml Can)" data-uom="can" data-room="Wet Room">RM-DRY-003 — Jersey Evaporada [can]</option>
+            <option value="PM-PAP-001" data-name="Glassine Wax Paper Sheets" data-uom="pcs" data-room="Dry Room 2">PM-PAP-001 — Glassine Wax Paper Sheets [pcs]</option>
+            <option value="PM-PAP-002" data-name="Baking Pan Pattern Paper" data-uom="pcs" data-room="Dry Room 2">PM-PAP-002 — Baking Pan Pattern Paper [pcs]</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block font-bold text-gray-700 mb-1">Net Quantity Requested (kg / pcs / cans)</label>
+          <input id="rawQtyInput" type="number" min="0.5" step="0.5" value="25" class="w-full p-2.5 border rounded-lg font-mono font-bold text-base text-[#5B2E7A]" />
+        </div>
+      </div>
+
+      <div>
+        <label class="block font-bold text-gray-700 mb-1 text-xs">Purpose / Batch Reference</label>
+        <input id="rawPurposeInput" type="text" value="Commercial Shift Production Requisition" class="w-full p-2.5 border rounded-lg text-xs" />
+      </div>
+
+      <div class="flex justify-end">
+        <button type="button" onclick="submitRawWithdrawal()" class="bg-[#5B2E7A] hover:bg-[#3D1C52] text-white font-bold text-xs px-6 py-3 rounded-xl shadow-lg flex items-center gap-2 transition">
+          <i class="fa-solid fa-file-signature"></i> Send Withdrawal Request to Jade Q. Dela Cruz
+        </button>
+      </div>
+    </section>
+
+    <!-- RECENT SUBMISSIONS LOG -->
+    <section class="bg-white rounded-2xl border border-[#E2D1B8] shadow-sm overflow-hidden">
+      <div class="px-5 py-3.5 bg-[#FAF6EE] border-b border-[#E2D1B8] flex justify-between items-center">
+        <h3 class="font-serif-jjb font-bold text-sm text-[#5B2E7A]">Submitted Requisitions From This Device</h3>
+        <span id="submittedCountBadge" class="text-xs font-mono text-gray-500">0 sent today</span>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-xs">
+          <thead class="bg-[#5B2E7A] text-white">
+            <tr>
+              <th class="p-3">Time</th>
+              <th class="p-3">Ref / Order ID</th>
+              <th class="p-3">Outlet / Line</th>
+              <th class="p-3">Details</th>
+              <th class="p-3 text-center">Sync Status</th>
+            </tr>
+          </thead>
+          <tbody id="submissionsLogBody" class="divide-y">
+            <tr><td colspan="5" class="p-4 text-center text-gray-400 italic">No requisitions submitted in this session yet.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+  </main>
+
+  <script>
+    const WORKER_API_URL = window.location.origin.includes("http")
+      ? `${window.location.origin}/api/sync`
+      : "https://jjb-systems.pages.dev/api/sync";
+    const GAS_FALLBACK_URL = "https://script.google.com/macros/s/AKfycbwBll5ZKuiBO0wX9WSXGRd-Tua4QpxbfKAcrnWhVmdkjkU_3mnwgI7bX-iiRgjHlkYa/exec";
+
+    const RECIPES = {
+      "BRD-PAN-3KG": {
+        sku: "BRD-PAN-3KG", name: "Commercial Pandesal Batched Ingredient Mix (3-Kilo Yield Kit)",
+        flourKg: 3.0, unitKitWeightKg: 4.11, yieldPcs: 85,
+        ingredients: [
+          { code: "RM-FLR-003", name: "Bread Flour (1st Class)", g: 3000, note: "3,000 g (3 kg)" },
+          { code: "RM-DRY-004", name: "Skim Milk Powder", g: 120, note: "120 g" },
+          { code: "RM-LEV-001", name: "Instant Yeast", g: 30, maxG: 45, note: "30 g to 45 g" },
+          { code: "RM-SWT-001", name: "Brown Sugar", g: 600, note: "600 g" },
+          { code: "RM-SWT-003", name: "Refined Iodized Salt", g: 45, note: "45 g" },
+          { code: "WATER", name: "Water (or Ice Sub)", g: 1440, maxG: 1500, note: "1,440–1,500 ml", isWater: true },
+          { code: "RM-FAT-003", name: "Vegetable Shortening", g: 200, note: "200 g" },
+          { code: "RM-FAT-004", name: "Margarine", g: 100, note: "100 g" },
+          { code: "RM-LEV-005", name: "Bread Improver", g: 15, note: "15 g" },
+          { code: "RM-DRY-006", name: "Fine Breadcrumbs", g: 0, note: "As needed for rolling", isAsNeeded: true }
+        ]
+      },
+      "BRD-PAN-6KG": {
+        sku: "BRD-PAN-6KG", name: "Commercial Pandesal Batched Ingredient Mix (6-Kilo Yield Kit)",
+        flourKg: 6.0, unitKitWeightKg: 8.22, yieldPcs: 170,
+        ingredients: [
+          { code: "RM-FLR-003", name: "Bread Flour (1st Class)", g: 6000, note: "6,000 g (6 kg)" },
+          { code: "RM-DRY-004", name: "Skim Milk Powder", g: 240, note: "240 g" },
+          { code: "RM-LEV-001", name: "Instant Yeast", g: 60, maxG: 90, note: "60 g to 90 g" },
+          { code: "RM-SWT-001", name: "Brown Sugar", g: 1200, note: "1,200 g" },
+          { code: "RM-SWT-003", name: "Refined Iodized Salt", g: 90, note: "90 g" },
+          { code: "WATER", name: "Water (or Ice Sub)", g: 2880, maxG: 3000, note: "2,880–3,000 ml", isWater: true },
+          { code: "RM-FAT-003", name: "Vegetable Shortening", g: 400, note: "400 g" },
+          { code: "RM-FAT-004", name: "Margarine", g: 200, note: "200 g" },
+          { code: "RM-LEV-005", name: "Bread Improver", g: 30, note: "30 g" },
+          { code: "RM-DRY-006", name: "Fine Breadcrumbs", g: 0, note: "As needed for rolling", isAsNeeded: true }
+        ]
+      },
+      "BRD-UBE-001": {
+        sku: "BRD-UBE-001", name: "Special Ube Cheese Pandesal Kit",
+        flourKg: 10.0, unitKitWeightKg: 13.98, yieldPcs: 300,
+        ingredients: [
+          { code: "RM-FLR-001", name: "Continental All Purpose Flour", g: 10000, note: "10,000 g" },
+          { code: "RM-SWT-002", name: "Refined White Sugar", g: 1800, note: "1,800 g" },
+          { code: "RM-FAT-001", name: "Buttercup Margarine / Butter", g: 1000, note: "1,000 g" },
+          { code: "RM-FLV-001", name: "Unibake Ube Flavor Blend", g: 350, note: "350 g" },
+          { code: "RM-LEV-001", name: "Gloripan Instant Dry Yeast", g: 180, note: "180 g" },
+          { code: "RM-SWT-003", name: "Refined Iodized Salt", g: 150, note: "150 g" },
+          { code: "RM-DRY-002", name: "Master Chef Condensada", g: 500, note: "500 g" }
+        ]
+      },
+      "BRD-MON-001": {
+        sku: "BRD-MON-001", name: "Classic Monay & Sweet Loaf Kit",
+        flourKg: 12.5, unitKitWeightKg: 18.05, yieldPcs: 250,
+        ingredients: [
+          { code: "RM-FLR-001", name: "Continental All Purpose Flour", g: 12500, note: "12,500 g" },
+          { code: "RM-SWT-002", name: "Refined White Sugar", g: 2500, note: "2,500 g" },
+          { code: "RM-FAT-004", name: "Alpha Margarine", g: 1250, note: "1,250 g" },
+          { code: "RM-DRY-001", name: "Fresh Farm Eggs", g: 750, note: "750 g" },
+          { code: "RM-DRY-004", name: "Skim Milk Powder", g: 625, note: "625 g" },
+          { code: "RM-LEV-001", name: "Gloripan Instant Dry Yeast", g: 225, note: "225 g" },
+          { code: "RM-SWT-003", name: "Refined Iodized Salt", g: 200, note: "200 g" }
+        ]
+      },
+      "PST-ENS-001": {
+        sku: "PST-ENS-001", name: "Special Butter Ensaymada Kit",
+        flourKg: 10.0, unitKitWeightKg: 17.24, yieldPcs: 200,
+        ingredients: [
+          { code: "RM-FLR-001", name: "Continental All Purpose Flour", g: 8000, note: "8,000 g" },
+          { code: "RM-FLR-006", name: "Soft Cake Flour", g: 2000, note: "2,000 g" },
+          { code: "RM-SWT-002", name: "Refined White Sugar", g: 2200, note: "2,200 g" },
+          { code: "RM-FAT-001", name: "Buttercup Margarine / Butter", g: 2000, note: "2,000 g" },
+          { code: "RM-DRY-001", name: "Fresh Farm Eggs", g: 1500, note: "1,500 g" },
+          { code: "RM-DRY-003", name: "Jersey Evaporada", g: 1200, note: "1,200 g" },
+          { code: "RM-LEV-001", name: "Gloripan Instant Dry Yeast", g: 220, note: "220 g" },
+          { code: "RM-SWT-003", name: "Refined Iodized Salt", g: 120, note: "120 g" }
+        ]
+      },
+      "BIS-001": {
+        sku: "BIS-001", name: "Biscocho Commercial Batch Kit",
+        flourKg: 25.0, unitKitWeightKg: 30.95, yieldPcs: 1000,
+        ingredients: [
+          { code: "RM-FLR-003", name: "1st Class Hard Flour (Rossa)", g: 25000, note: "25,000 g" },
+          { code: "RM-SWT-002", name: "Refined White Sugar", g: 3000, note: "3,000 g" },
+          { code: "RM-FAT-001", name: "Buttercup Margarine", g: 2000, note: "2,000 g" },
+          { code: "RM-LEV-001", name: "Gloripan Instant Dry Yeast", g: 375, note: "375 g" },
+          { code: "RM-SWT-003", name: "Refined Iodized Salt", g: 450, note: "450 g" },
+          { code: "RM-LEV-005", name: "Bread Improver", g: 125, note: "125 g" }
+        ]
+      },
+      "OTP-001": {
+        sku: "OTP-001", name: "Otap Layered Laminated Pastry Kit",
+        flourKg: 25.0, unitKitWeightKg: 40.38, yieldPcs: 1200,
+        ingredients: [
+          { code: "RM-FLR-003", name: "1st Class Hard Flour (Rossa)", g: 20000, note: "20,000 g" },
+          { code: "RM-FLR-004", name: "Soft Flour (General Milling)", g: 5000, note: "5,000 g" },
+          { code: "RM-FAT-003", name: "Vegetable Shortening (Sunny Suy)", g: 8750, note: "8,750 g" },
+          { code: "RM-SWT-002", name: "Refined White Sugar", g: 6250, note: "6,250 g" },
+          { code: "RM-SWT-003", name: "Refined Iodized Salt", g: 375, note: "375 g" }
+        ]
+      }
+    };
+
+    let submissionsLog = [];
+
+    document.getElementById("targetDateInput").value = new Date().toISOString().slice(0, 10);
+
+    function handleFacilityChange() {
+      const sel = document.getElementById("facilitySelect");
+      const opt = sel.options[sel.selectedIndex];
+      const facType = opt.getAttribute("data-type");
+      document.getElementById("requestedByInput").value = opt.getAttribute("data-person") || "";
+
+      const btnRaw = document.getElementById("btnModeRaw");
+      const notice = document.getElementById("outletPolicyNotice");
+      if (facType === "OUTLET") {
+        setOrderMode("KIT");
+        btnRaw.classList.add("opacity-40", "cursor-not-allowed");
+        notice.classList.remove("hidden");
+      } else {
+        btnRaw.classList.remove("opacity-40", "cursor-not-allowed");
+        notice.classList.add("hidden");
+      }
+    }
+
+    function setOrderMode(mode) {
+      const sel = document.getElementById("facilitySelect");
+      const facType = sel.options[sel.selectedIndex].getAttribute("data-type");
+      if (mode === "RAW" && facType === "OUTLET") {
+        alert("SOP-WAR-002 Policy Directive: Retail bakery outlets (Pan de Verde & Laurice Delicacies) are barred from ordering loose bulk raw materials directly. Please order Recipe-Batched Ingredient Kits.");
+        return;
+      }
+      document.getElementById("sectionKitOrder").classList.toggle("hidden", mode !== "KIT");
+      document.getElementById("sectionRawWithdrawal").classList.toggle("hidden", mode !== "RAW");
+      document.getElementById("btnModeKit").className = mode === "KIT"
+        ? "px-4 py-2 rounded-lg text-xs font-bold bg-[#3D1C52] text-white shadow"
+        : "px-4 py-2 rounded-lg text-xs font-bold bg-gray-100 text-gray-600";
+      document.getElementById("btnModeRaw").className = mode === "RAW"
+        ? "px-4 py-2 rounded-lg text-xs font-bold bg-[#5B2E7A] text-white shadow"
+        : "px-4 py-2 rounded-lg text-xs font-bold bg-gray-100 text-gray-600";
+    }
+
+    function renderKitBreakdown() {
+      const sku = document.getElementById("recipeSelect").value;
+      const mult = Math.max(1, parseFloat(document.getElementById("kitMultiplierInput").value) || 1);
+      const rec = RECIPES[sku];
+      if (!rec) return;
+
+      const totalFlour = (rec.flourKg * mult).toFixed(1);
+      const totalPcs = Math.round(rec.yieldPcs * mult);
+      const totalDryFatKg = (rec.unitKitWeightKg * mult).toFixed(2);
+
+      document.getElementById("kitSummarySubtext").textContent =
+        `${mult} Kits = ${totalFlour} kg Flour Basis · Est. Yield: ${totalPcs.toLocaleString()} pcs`;
+      document.getElementById("totalKitWeightBadge").textContent =
+        `Total Dry + Fat Kit Weight: ${totalDryFatKg} kg`;
+
+      const tbody = document.getElementById("kitBreakdownBody");
+      tbody.innerHTML = rec.ingredients.map(ing => {
+        const totalG = ing.g * mult;
+        const maxG = ing.maxG ? ing.maxG * mult : null;
+        const unit = ing.isWater ? "ml" : "g";
+        const scaledText = ing.isAsNeeded
+          ? "As needed for rolling"
+          : maxG
+          ? `${totalG.toLocaleString()} ${unit} to ${maxG.toLocaleString()} ${unit}`
+          : `${totalG.toLocaleString()} ${unit}`;
+        const pullKg = ing.isAsNeeded
+          ? "As needed"
+          : `${(totalG / 1000).toFixed(3)} ${ing.isWater ? "L" : "kg"}`;
+
+        return `
+          <tr>
+            <td class="p-2 font-mono font-bold text-[#5B2E7A]">${ing.code}</td>
+            <td class="p-2 font-medium">${ing.name}</td>
+            <td class="p-2 font-mono text-gray-500">${ing.note}</td>
+            <td class="p-2 text-right font-mono font-bold text-[#1E7A3E]">${scaledText}</td>
+            <td class="p-2 text-right font-mono font-semibold text-gray-800">${pullKg}</td>
+          </tr>
+        `;
+      }).join("");
+    }
+
+    async function dispatchPayload(actionType, actorName, details, payloadObj) {
+      const badge = document.getElementById("syncBadge");
+      const badgeText = document.getElementById("syncBadgeText");
+      badge.className = "bg-[#D68910] text-white text-xs font-bold px-3 py-1.5 rounded-full flex items-center gap-1.5 shadow animate-pulse";
+      badgeText.textContent = "DISPATCHING TO WAREHOUSE...";
+
+      const envelope = {
+        queueId: `REQ-${Date.now()}`,
+        timestamp: new Date().toLocaleString("en-PH", { timeZone: "Asia/Manila" }),
+        terminalId: "OUTLET-PORTAL",
+        actorName,
+        actorRole: "Outlet / Line Requisitioner",
+        actionType,
+        details,
+        payload: payloadObj
+      };
+
+      // Also write to shared localStorage if opened on same domain so main app sees it instantaneously
+      try {
+        const existingQueue = JSON.parse(localStorage.getItem("JJB_PORTAL_INBOX") || "[]");
+        existingQueue.push(envelope);
+        localStorage.setItem("JJB_PORTAL_INBOX", JSON.stringify(existingQueue));
+      } catch (e) {}
+
+      let synced = false;
+      try {
+        const res = await fetch(WORKER_API_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(envelope)
+        });
+        if (res.ok) synced = true;
+      } catch (err) {
+        // Fallback directly to Google Apps Script Web App
+        try {
+          await fetch(GAS_FALLBACK_URL, {
+            method: "POST",
+            headers: { "Content-Type": "text/plain;charset=utf-8" },
+            body: JSON.stringify(envelope),
+            mode: "no-cors"
+          });
+          synced = true;
+        } catch (e2) {}
+      }
+
+      badge.className = synced
+        ? "bg-[#1E7A3E] text-white text-xs font-bold px-3 py-1.5 rounded-full flex items-center gap-1.5 shadow"
+        : "bg-[#C0392B] text-white text-xs font-bold px-3 py-1.5 rounded-full flex items-center gap-1.5 shadow";
+      badgeText.textContent = synced ? "SYNCED TO JADE & ROMEO" : "SAVED TO LOCAL QUEUE";
+
+      submissionsLog.unshift({
+        time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+        refId: payloadObj.orderId || payloadObj.slipNo,
+        outlet: payloadObj.outletName || payloadObj.requestingEntity,
+        details,
+        status: synced ? "LIVE SYNCED" : "QUEUED"
+      });
+      renderSubmissionsLog();
+    }
+
+    function submitKitRequisition() {
+      const sel = document.getElementById("facilitySelect");
+      const opt = sel.options[sel.selectedIndex];
+      const outletId = sel.value;
+      const outletName = opt.text;
+      const driver = opt.getAttribute("data-driver") || "Outlet Logistics";
+      const requestedBy = document.getElementById("requestedByInput").value || "Outlet Baker";
+      const targetDate = document.getElementById("targetDateInput").value;
+      const sku = document.getElementById("recipeSelect").value;
+      const rec = RECIPES[sku];
+      const mult = Math.max(1, parseFloat(document.getElementById("kitMultiplierInput").value) || 1);
+      const notes = document.getElementById("kitNotesInput").value;
+
+      const orderId = `BORD-${new Date().toISOString().slice(0, 10).replace(/-/g, "")}-${Date.now().toString().slice(-3)}`;
+      const newOrder = {
+        orderId,
+        requestDate: new Date().toISOString().slice(0, 10),
+        targetDate,
+        outletId,
+        outletName,
+        recipeSku: rec.sku,
+        recipeName: rec.name,
+        batchMultiplier: mult,
+        requestedQtyPcs: Math.round(rec.yieldPcs * mult),
+        expectedKitWeightKg: Number((rec.unitKitWeightKg * mult).toFixed(2)),
+        requestedBy,
+        enteredBy: `${requestedBy} (via Outlet Portal)`,
+        status: "PENDING_BATCHING",
+        bulkRequisitionStatus: "NOT_REQUESTED",
+        linkedWithdrawalSlipNo: null,
+        batchTagId: null,
+        actualBatchedKg: 0,
+        actualBatchedUnits: 0,
+        releasedTo: driver,
+        notes: notes || `${mult}x ${rec.name} ordered via Outlet Portal.`
+      };
+
+      dispatchPayload(
+        "BATCH_REQUISITION",
+        requestedBy,
+        `${outletName} ordered ${mult} Kits of ${rec.name} (${orderId})`,
+        newOrder
+      );
+    }
+
+    function submitRawWithdrawal() {
+      const facSelect = document.getElementById("facilitySelect");
+      const requestingEntity = facSelect.options[facSelect.selectedIndex].text;
+      const requestedBy = document.getElementById("requestedByInput").value || "Production Baker";
+      const rawSelect = document.getElementById("rawSkuSelect");
+      const rawOpt = rawSelect.options[rawSelect.selectedIndex];
+      const code = rawSelect.value;
+      const name = rawOpt.getAttribute("data-name");
+      const uom = rawOpt.getAttribute("data-uom");
+      const room = rawOpt.getAttribute("data-room");
+      const qty = Math.max(0.1, parseFloat(document.getElementById("rawQtyInput").value) || 1);
+      const purpose = document.getElementById("rawPurposeInput").value || "Production Requisition";
+
+      const slipNo = `WS-${new Date().toISOString().slice(0, 10).replace(/-/g, "")}-${Date.now().toString().slice(-3)}`;
+      const newSlip = {
+        slipNo,
+        date: new Date().toISOString().slice(0, 10),
+        time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+        requestingEntity,
+        department: requestingEntity,
+        purpose,
+        requestedBy,
+        issuedBy: "Pending Jade Q. Dela Cruz Release",
+        receivedBy: requestedBy,
+        status: "PENDING_APPROVAL",
+        items: [{
+          materialCode: code,
+          name,
+          qtyRequestedSec: qty,
+          qtyIssuedSec: qty,
+          secondaryUom: uom,
+          lotNumber: "FEFO-OLDEST-LOT",
+          storageRoom: room,
+          remarks: `Submitted via Requisition Portal (${purpose})`
+        }]
+      };
+
+      dispatchPayload(
+        "BULK_REQUISITION_REQUESTED",
+        requestedBy,
+        `${requestingEntity} requested ${qty} ${uom} of ${name} (${slipNo})`,
+        newSlip
+      );
+    }
+
+    function renderSubmissionsLog() {
+      document.getElementById("submittedCountBadge").textContent = `${submissionsLog.length} sent today`;
+      const tbody = document.getElementById("submissionsLogBody");
+      tbody.innerHTML = submissionsLog.map(item => `
+        <tr class="hover:bg-[#FAF6EE]/50">
+          <td class="p-3 font-mono text-gray-500">${item.time}</td>
+          <td class="p-3 font-mono font-bold text-[#5B2E7A]">${item.refId}</td>
+          <td class="p-3 font-semibold">${item.outlet}</td>
+          <td class="p-3">${item.details}</td>
+          <td class="p-3 text-center">
+            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-green-100 text-[#1E7A3E]">${item.status}</span>
+          </td>
+        </tr>
+      `).join("");
+    }
+
+    handleFacilityChange();
+    renderKitBreakdown();
+  </script>
+</body>
+</html>
