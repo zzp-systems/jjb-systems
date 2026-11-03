@@ -4,7 +4,7 @@ import {
   FileText, Truck, Scale, ShieldCheck, ArrowDownRight, ArrowUpRight,
   Sparkles, Clock, AlertCircle, Download
 } from 'lucide-react';
-import { EOD_EMAIL_RECIPIENTS } from '../data/initialData';
+import { EOD_EMAIL_RECIPIENTS } from './initialData';
 
 export default function EodReportModule({
   receivingReports,
@@ -31,7 +31,7 @@ export default function EodReportModule({
     let body = `JANG-JANG BAKESHOP & KINGDOM CONFECTIONARY\n`;
     body += `DAILY WAREHOUSE & INGREDIENT BATCHING END-OF-DAY (EOD) SETTLEMENT REPORT\n`;
     body += `Indangan Central Plant LTO #3000013388488 | Sasa Facility LTO #3000002291335\n`;
-    body += `Date: ${selectedDate} | Cutoff: 23:45 PHT\n\n`;
+    body += `Date: ${selectedDate} | Scheduled Cutoff: 23:45 PHT\n\n`;
     body += `Governing Authority: Angelina P. Sun (COA) / Zaphyr Zur Pomicpic (Ops Advisor)\n`;
     body += `========================================================================\n\n`;
 
@@ -108,7 +108,6 @@ export default function EodReportModule({
     return body;
   };
 
-  // SAFE DOWNLOAD METHOD (Bypasses URL Length Limits)
   const handleDownloadReport = () => {
     const reportText = buildPlainTextReport();
     const blob = new Blob([reportText], { type: 'text/plain;charset=utf-8' });
@@ -131,10 +130,9 @@ export default function EodReportModule({
     const body = encodeURIComponent(buildPlainTextReport());
     const mailtoUrl = `mailto:${recipients.join(',')}?subject=${subject}&body=${body}`;
     
-    // Warn user if URL is very long
     if (mailtoUrl.length > 2000) {
       const proceed = window.confirm(
-        "Warning: This report contains a lot of data and exceeds standard email link limits. It is highly recommended to use the 'Download as TXT' button instead and attach the file to your email. Proceed anyway?"
+        "Warning: This report contains a lot of data and exceeds standard email link limits. It is highly recommended to use the 'Download as TXT' button instead and attach the file. Proceed anyway?"
       );
       if (!proceed) return;
     }
@@ -162,7 +160,7 @@ export default function EodReportModule({
     if (onRecordAudit) {
       onRecordAudit(
         "AUTOMATED_EOD_2345_DISPATCH", 
-        `Automated scheduled settlement broadcast successfully routed to ${recipients.join(', ')}`
+        `Automated scheduled settlement broadcast (23:45 PHT) successfully routed to ${recipients.join(', ')}`
       );
     }
     setTimeout(() => setDispatchedStatus(false), 5000);
@@ -266,10 +264,9 @@ export default function EodReportModule({
             <button
               onClick={handleLaunchMailto}
               className="bg-[#1E7A3E] hover:bg-[#165c2f] text-white text-xs font-bold px-4 py-2 rounded-lg shadow-md flex items-center gap-1.5 transition"
-              title="Open default email client with all recipients"
             >
               <Send size={14} />
-              <span>Email to Stakeholders</span>
+              <span>Email All Stakeholders</span>
             </button>
 
             <button
@@ -285,7 +282,7 @@ export default function EodReportModule({
               className="bg-[#3D1C52] hover:bg-[#240e32] text-white text-xs font-bold px-3 py-2 rounded-lg shadow-sm flex items-center gap-1.5 transition"
             >
               <Printer size={14} />
-              <span>Print Dossier</span>
+              <span>Print</span>
             </button>
           </div>
         </div>
@@ -303,6 +300,7 @@ export default function EodReportModule({
         </div>
       )}
 
+      {/* DOSSIER CONTAINER */}
       <div id="eod-printable-dossier" className="bg-white rounded-2xl border-2 border-[#C8963E]/40 p-6 md:p-8 shadow-lg space-y-8">
         <div className="border-b-2 border-[#5B2E7A] pb-4 flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
           <div>
@@ -311,7 +309,7 @@ export default function EodReportModule({
                 DAILY SETTLEMENT DOSSIER
               </span>
               <span className="bg-[#5B2E7A] text-white text-[10px] font-bold px-2 py-0.5 rounded">
-                EOD-REV-4.3
+                EOD-REV-4.2
               </span>
             </div>
             <h1 className="font-serif font-bold text-2xl md:text-3xl text-[#3D1C52] mt-1">
@@ -326,7 +324,7 @@ export default function EodReportModule({
           </div>
 
           <div className="text-right text-xs bg-[#FAF6EE] p-3 rounded-lg border border-[#E2D1B8]">
-            <p className="font-bold text-[#5B2E7A]">Cutoff: 23:45 PHT</p>
+            <p className="font-bold text-[#5B2E7A]">Scheduled Cutoff: 23:45 PHT</p>
             <p className="font-mono font-bold text-sm text-gray-900 mt-0.5">{selectedDate}</p>
             <p className="text-[11px] text-green-700 font-semibold mt-1">Status: Balanced & Reconciled</p>
           </div>
@@ -597,6 +595,7 @@ export default function EodReportModule({
           )}
         </div>
 
+        {/* SIGN-OFF SIGNATURE BLOCKS */}
         <div className="pt-6 border-t-2 border-[#5B2E7A] space-y-4">
           <p className="text-[11px] font-bold uppercase text-gray-500 tracking-wider">
             Operational Governance & Regulatory Verification Signatures (A.O. 153 s.2004 cGMP):
@@ -621,7 +620,7 @@ export default function EodReportModule({
               <p className="text-gray-500 text-[10px] uppercase font-bold">Inventory & Stock Reconciler:</p>
               <p className="font-bold text-[#3D1C52] mt-1">Mariejohn F. Tacuban</p>
               <div className="border-b border-gray-400 my-2"></div>
-              <p className="text-[10px] text-gray-400">Date & Signature (23:45 Perpetual)</p>
+              <p className="text-[10px] text-gray-400">Date & Signature (17:00 Perpetual)</p>
             </div>
 
             <div className="border border-gray-300 rounded-lg p-3 bg-gray-50">
