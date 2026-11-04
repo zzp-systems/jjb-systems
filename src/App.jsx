@@ -21,7 +21,7 @@ import {
   EOD_EMAIL_RECIPIENTS
 } from './data/initialData';
 
-const STORAGE_KEY = 'JJB_WMS_LIVE_V4_5_STATE';
+const STORAGE_KEY = 'JJB_WMS_LIVE_V4_6_STATE';
 const WORKER_SYNC_URL = '/api/sync';
 const GAS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwBll5ZKuiBO0wX9WSXGRd-Tua4QpxbfKAcrnWhVmdkjkU_3mnwgI7bX-iiRgjHlkYa/exec';
 
@@ -34,7 +34,6 @@ export default function App() {
   const [lastAutoDispatchTime, setLastAutoDispatchTime] = useState(null);
   const [liveToast, setLiveToast] = useState(null);
 
-  // Hydrate state from localStorage so Jade's & Romeo's November 2026+ updates persist across browser refreshes
   const loadSaved = (key, fallback) => {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
@@ -59,40 +58,28 @@ export default function App() {
   const lastPolledTimestampRef = useRef(0);
   const processedQueueIdsRef = useRef(new Set());
 
-  // Save state changes to localStorage
   useEffect(() => {
     try {
       localStorage.setItem(
         STORAGE_KEY,
         JSON.stringify({
-          inventory,
-          receivingReports,
-          withdrawals,
-          batchOrders,
-          quarantineList,
-          adjustments,
-          auditLogs
+          inventory, receivingReports, withdrawals, batchOrders, quarantineList, adjustments, auditLogs
         })
       );
-    } catch (e) {
-      console.error('Local storage persistence warning:', e);
-    }
+    } catch (e) {}
   }, [inventory, receivingReports, withdrawals, batchOrders, quarantineList, adjustments, auditLogs]);
 
-  // Header Badge Counts
   const lowStockCount = inventory.filter(i => i.currentBalance <= i.threshold).length;
   const pendingBatchCount = batchOrders.filter(b => b.status === 'PENDING_BATCHING').length;
   const pendingJadeApprovalCount = withdrawals.filter(w => w.status === 'PENDING_APPROVAL').length;
 
-  // Offline Queue Sync Drain Simulation
   useEffect(() => {
     if (queueCount > 0 && !isOffline) {
-      const timer = setTimeout(() => setQueueCount(prev => Math.max(0, prev - 1)), 2500);
+      const timer = setTimeout(() => setQueueCount(prev => Math.max(0, prev - 1)), 2000);
       return () => clearTimeout(timer);
     }
   }, [queueCount, isOffline]);
 
-  // --- AUTOMATIC CLOUDFLARE WORKER + GOOGLE APPS SCRIPT DISPATCH BRIDGE ---
   const recordAudit = (action, details, payloadData = {}) => {
     const queueId = `Q-${Date.now()}-${Math.random().toString(36).slice(2, 6).toUpperCase()}`;
     processedQueueIdsRef.current.add(queueId);
@@ -127,13 +114,11 @@ export default function App() {
         payload: payloadData
       };
 
-      // 1. Primary: Dispatch to Cloudflare Worker API (/api/sync), which dual-writes to Edge/D1 + Google Sheets
       fetch(WORKER_SYNC_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(envelope)
       }).catch(() => {
-        // 2. Fallback: Direct POST to Google Apps Script Web App if running locally without Worker
         fetch(GAS_WEB_APP_URL, {
           method: 'POST',
           headers: { 'Content-Type': 'text/plain;charset=utf-8' },
@@ -144,7 +129,6 @@ export default function App() {
     }
   };
 
-  // --- REAL-TIME OUTLET PORTAL & MULTI-TERMINAL AUTO-POLLING (Every 4 Seconds) ---
   useEffect(() => {
     if (isOffline) return;
 
@@ -212,7 +196,6 @@ export default function App() {
     return () => clearInterval(pollTimer);
   }, [isOffline]);
 
-  // --- AUTOMATED 23:45 PHT NIGHTLY EOD SETTLEMENT REPORT WATCHER ---
   useEffect(() => {
     const checkNightly2345Trigger = () => {
       const nowManila = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Manila' }));
@@ -226,7 +209,7 @@ export default function App() {
         setLastAutoDispatchTime(stamp);
         recordAudit(
           'AUTOMATED_EOD_2345_DISPATCH',
-          `Scheduled 23:45 PHT EOD Settlement Report (Inbound Receiving, Floor Withdrawals, and 3-Step Batching Lifecycle) automatically compiled and queued to ${EOD_EMAIL_RECIPIENTS.join(', ')}`,
+          `Scheduled 23:45 PHT EOD Settlement Report automatically compiled and queued to ${EOD_EMAIL_RECIPIENTS.join(', ')}`,
           { date: dateKey, recipients: EOD_EMAIL_RECIPIENTS }
         );
       }
@@ -236,7 +219,6 @@ export default function App() {
     return () => clearInterval(intervalId);
   }, [receivingReports, withdrawals, batchOrders]);
 
-  // 1. Save Inbound Receiving (Form-REC-001)
   const handleSaveReceiving = (report) => {
     setReceivingReports(prev => [report, ...prev]);
     setInventory(prev => prev.map(invItem => {
@@ -254,19 +236,14 @@ export default function App() {
           }
         ].sort((a, b) => new Date(a.expiryDate) - new Date(b.expiryDate));
 
-        return {
-          ...invItem,
-          currentBalance: Number((invItem.currentBalance + netAdded).toFixed(3)),
-          lots: updatedLots
-        };
+        return { ...invItem, currentBalance: Number((invItem.currentBalance + netAdded).toFixed(3)), lots: updatedLots };
       }
       return invItem;
     }));
-    recordAudit('INBOUND_RECEIVING', `Logged Form-REC-001 ${report.reportNo} from ${report.supplier} valued at ₱${report.totalPaid?.toLocaleString()}`, report);
+    recordAudit('INBOUND_RECEIVING', `Logged Form-REC-001 ${report.reportNo} from ${report.supplier}`, report);
     setActiveTab('dashboard');
   };
 
-  // 2. Save Direct Stock Withdrawal (Form-WAR-001)
   const handleSaveWithdrawal = (slip) => {
     setWithdrawals(prev => [slip, ...prev]);
     if (slip.status !== 'PENDING_APPROVAL') {
@@ -281,13 +258,11 @@ export default function App() {
     recordAudit('STOCK_OUT_ISSUANCE', `Issued Form-WAR-001 ${slip.slipNo} to ${slip.requestingEntity}`, slip);
   };
 
-  // 3. Step 1 of Batching: Intake Outlet Order (Form-PRO-001)
   const handleSaveBatchOrder = (newOrder) => {
     setBatchOrders(prev => [newOrder, ...prev]);
-    recordAudit('BATCH_REQUISITION', `Created Form-PRO-001 (${newOrder.orderId}) for ${newOrder.batchMultiplier} Kits of ${newOrder.recipeName} to ${newOrder.outletName}`, newOrder);
+    recordAudit('BATCH_REQUISITION', `Created Form-PRO-001 (${newOrder.orderId}) for ${newOrder.batchMultiplier} Kits to ${newOrder.outletName}`, newOrder);
   };
 
-  // 4. Step 2A of Batching: Romeo Requests Bulk Raw Materials from Jade (Creates PENDING_APPROVAL Slip in Tab 3)
   const handleRequestBulkMaterials = (order) => {
     const recipe = MASTER_RECIPES.find(r => r.sku === order.recipeSku);
     if (!recipe) return;
@@ -295,9 +270,8 @@ export default function App() {
     const bulkItems = recipe.ingredients
       .filter(i => !i.isPackaging && !i.isWater && !i.isAsNeeded && i.code !== 'WATER')
       .map(ing => {
-        const requiredSec = Number(((ing.gramsPerBatch * order.batchMultiplier) / 1000).toFixed(3)); // g -> kg
+        const requiredSec = Number(((ing.gramsPerBatch * order.batchMultiplier) / 1000).toFixed(3));
         const mat = inventory.find(m => m.code === ing.code);
-
         return {
           materialCode: ing.code,
           name: ing.name,
@@ -316,7 +290,7 @@ export default function App() {
       linkedOrderId: order.orderId,
       date: new Date().toISOString().slice(0, 10),
       time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      requestingEntity: `Terminal 2 · Batching Room (Romeo B. Malusay for ${order.outletName})`,
+      requestingEntity: `Terminal 2 · Batching Room (Romeo for ${order.outletName})`,
       department: 'Ingredient Batching & Kitting Partition',
       purpose: `Bulk Material Pull for Order ${order.orderId} (${order.batchMultiplier}x ${order.recipeName})`,
       requestedBy: 'Romeo B. Malusay (Ingredient Batching Preparer)',
@@ -336,11 +310,10 @@ export default function App() {
     setWithdrawals(prev => [newSlip, ...prev]);
     setBatchOrders(prev => prev.map(o => o.orderId === order.orderId ? updatedOrder : o));
 
-    recordAudit('BULK_REQUISITION_REQUESTED', `Romeo B. Malusay submitted Bulk Material Pull Request (${newSlipNo}) to Jade Q. Dela Cruz for Order ${order.orderId}`, { ...newSlip, orderId: order.orderId });
-    alert(`Bulk Material Pull Request (${newSlipNo}) sent to Terminal 1! Jade Q. Dela Cruz can now click "Approve & Release Bulk Lots (FEFO)" in Tab 3 to deduct inventory and unlock Romeo's Scaling Workbench.`);
+    recordAudit('BULK_REQUISITION_REQUESTED', `Romeo submitted Bulk Pull Request (${newSlipNo}) to Jade for Order ${order.orderId}`, { ...newSlip, orderId: order.orderId });
+    alert(`Bulk Material Pull Request (${newSlipNo}) sent to Terminal 1! Jade can now approve it in Tab 3.`);
   };
 
-  // 4B. Step 2B of Batching: Jade Approves & Releases Bulk Lots at Dutch Door (Deducts Inventory & Unlocks Romeo's Scale Button)
   const handleApprovePendingWithdrawal = (slipNo) => {
     const targetSlip = withdrawals.find(w => w.slipNo === slipNo);
     if (!targetSlip || targetSlip.status !== 'PENDING_APPROVAL') return;
@@ -357,16 +330,15 @@ export default function App() {
     setWithdrawals(prev => prev.map(w => w.slipNo === slipNo ? approvedSlip : w));
 
     setBatchOrders(prev => prev.map(o => {
-      if (o.linkedWithdrawalSlipNo === slipNo || o.orderId === targetSlip.linkedOrderId || (targetSlip.purpose && targetSlip.purpose.includes(o.orderId))) {
+      if (o.linkedWithdrawalSlipNo === slipNo || o.orderId === targetSlip.linkedOrderId) {
         return { ...o, bulkMaterialsRequested: true, bulkMaterialsApprovedByJade: true, bulkRequisitionStatus: 'BULK_ISSUED_BY_JADE', linkedWithdrawalSlipNo: slipNo };
       }
       return o;
     }));
 
-    recordAudit('BULK_REQUISITION_APPROVED', `Jade Q. Dela Cruz approved Form-WAR-001 (${slipNo}), deducted FEFO bulk lots, and transferred materials to Romeo B. Malusay.`, approvedSlip);
+    recordAudit('BULK_REQUISITION_APPROVED', `Jade approved Form-WAR-001 (${slipNo}), deducted FEFO lots, and transferred to Romeo.`, approvedSlip);
   };
 
-  // 5. Step 3 of Batching: Romeo Scales/Kits (Form-ING-001) & Releases to Outlet
   const handleUpdateOrderStatus = (orderId, newStatus, batchTagId = null, actualBatchedKg = 0, scaleSealUsed = 'Seal #798073 (Bench Scale #1)') => {
     let updatedOrderSnapshot = null;
 
@@ -379,7 +351,7 @@ export default function App() {
           batchTagId: batchTagId || order.batchTagId,
           actualBatchedKg: actualBatchedKg || order.actualBatchedKg,
           actualBatchedUnits: order.requestedQtyPcs,
-          scaleUsed: scaleSealUsed || order.scaleUsed || 'Seal #798073 (Bench Scale #1)',
+          scaleUsed: scaleSealUsed || order.scaleUsed,
           sifter40MeshChecked: true,
           batchedAt: newStatus === 'BATCHED_KITTED' ? new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : order.batchedAt,
           batchedBy: newStatus === 'BATCHED_KITTED' ? 'Romeo B. Malusay' : order.batchedBy,
@@ -391,7 +363,7 @@ export default function App() {
       return order;
     }));
 
-    if (newStatus === 'BATCHED_KITTED') recordAudit('BATCH_KITTED', `Romeo B. Malusay certified Form-ING-001 scaling (${batchTagId}, ${actualBatchedKg} kg on ${scaleSealUsed}) for Order ${orderId}`, updatedOrderSnapshot);
+    if (newStatus === 'BATCHED_KITTED') recordAudit('BATCH_KITTED', `Romeo certified Form-ING-001 scaling (${batchTagId}, ${actualBatchedKg} kg) for Order ${orderId}`, updatedOrderSnapshot);
     if (newStatus === 'RELEASED') recordAudit('BATCH_RELEASED', `Released sealed batch kit for Order ${orderId} to outlet logistics`, updatedOrderSnapshot);
   };
 
@@ -481,7 +453,7 @@ export default function App() {
         setIsOffline={setIsOffline}
         queueCount={queueCount}
         pendingBatchCount={pendingBatchCount}
-        pendingJadeApprovalCount={pendingJadeApprovalCount}
+        pendingBulkApprovalCount={pendingJadeApprovalCount}
         lowStockCount={lowStockCount}
         onQuickEod={() => setActiveTab('eod')}
       />
