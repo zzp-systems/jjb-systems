@@ -1,4 +1,4 @@
-const CACHE_NAME = 'jjb-wms-v4-cache';
+const CACHE_NAME = 'jjb-wms-v4.5-cache';
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
