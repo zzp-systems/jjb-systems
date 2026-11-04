@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { 
   BarChart3, Download, Upload, Calendar, Printer, 
   ArrowDownRight, ArrowUpRight, Scale, ShoppingCart, Plus, Trash2, CheckCircle2
@@ -10,7 +10,9 @@ export default function ReportsModule({
   withdrawals = [], 
   batchOrders = [], 
   adjustments = [],
-  onImportInventoryCsv
+  onImportInventoryCsv,
+  currentRole = 'Jade Q. Dela Cruz',
+  onRecordAudit
 }) {
   const [activeView, setActiveView] = useState('reports'); // 'reports' | 'po_generator'
   const [timeframe, setTimeframe] = useState('MONTH'); // WEEK, MONTH, QUARTER, YEAR, ALL
@@ -21,6 +23,8 @@ export default function ReportsModule({
   const [poNotes, setPoNotes] = useState('Mandatory Requirement: All food-contact packaging must include CoA/CoC; Chilled Buttercup blocks must arrive <= 0°C with individual cellophane expiry stickers.');
   const [poItems, setPoItems] = useState([]);
   const [newSkuToAdd, setNewSkuToAdd] = useState(inventory[0]?.code || 'RM-FLR-001');
+  const fileInputRef = useRef(null);
+  const [csvImportStatus, setCsvImportStatus] = useState(null);
 
   // Initialize PO items automatically from low-stock inventory recommendations
   useEffect(() => {
@@ -121,12 +125,10 @@ export default function ReportsModule({
   const handleExportBatching = () => {
     const flat = filteredBatchOrders.map(b => ({
       OrderID: b.orderId, Date: b.requestDate, Outlet: b.outletName, Recipe: b.recipeName,
-      KitsOrdered: b.batchMultiplier, YieldPcs: b.requestedQtyPcs,
-      BulkRequisitionStatus: b.bulkRequisitionStatus || 'NOT_REQUESTED',
-      LinkedWithdrawalSlip: b.linkedWithdrawalSlipNo || 'N/A',
-      Status: b.status, BatchTag: b.batchTagId || 'N/A', ActualWeightKg: b.actualBatchedKg || 0
+      KitsOrdered: b.batchMultiplier, YieldPcs: b.requestedQtyPcs, BulkRequested: b.bulkMaterialsRequested ? 'YES' : 'NO',
+      BulkApprovedByJade: b.bulkMaterialsApprovedByJade ? 'YES' : 'NO', Status: b.status, BatchTag: b.batchTagId || 'N/A', ActualWeightKg: b.actualBatchedKg || 0
     }));
-    downloadCSV(flat, ['OrderID', 'Date', 'Outlet', 'Recipe', 'KitsOrdered', 'YieldPcs', 'BulkRequisitionStatus', 'LinkedWithdrawalSlip', 'Status', 'BatchTag', 'ActualWeightKg'], 'JJB_Batching_Kitting_Report');
+    downloadCSV(flat, ['OrderID', 'Date', 'Outlet', 'Recipe', 'KitsOrdered', 'YieldPcs', 'BulkRequested', 'BulkApprovedByJade', 'Status', 'BatchTag', 'ActualWeightKg'], 'JJB_Batching_Kitting_Report');
   };
 
   // CSV Import Handler for Live Inventory Updates
@@ -142,16 +144,13 @@ export default function ReportsModule({
       for (let i = 1; i < lines.length; i++) {
         const cols = lines[i].split(',').map(c => c.replace(/^"|"$/g, '').trim());
         if (cols[0] && !isNaN(parseFloat(cols[1]))) {
-          updates.push({
-            code: cols[0],
-            newBalanceSec: parseFloat(cols[1]),
-            unitCost: cols[2] && !isNaN(parseFloat(cols[2])) ? parseFloat(cols[2]) : undefined
-          });
+          updates.push({ code: cols[0], newBalanceSec: parseFloat(cols[1]), unitCost: cols[2] ? parseFloat(cols[2]) : undefined });
         }
       }
       if (updates.length > 0 && onImportInventoryCsv) {
         onImportInventoryCsv(updates);
-        alert(`Successfully updated ${updates.length} SKU balances from CSV!`);
+        setCsvImportStatus(`Successfully updated ${updates.length} SKU balances from CSV!`);
+        setTimeout(() => setCsvImportStatus(null), 5000);
       } else {
         alert("CSV format tip: Column 1 = Material Code (e.g. RM-FLR-001), Column 2 = New Net Balance.");
       }
@@ -168,6 +167,8 @@ export default function ReportsModule({
 
   const displayedPoItems = poItems.filter(i => selectedSupplierFilter === 'ALL' || i.supplier === selectedSupplierFilter);
   const totalPoAmountPhp = displayedPoItems.reduce((sum, i) => sum + (i.orderQtyPrimary * i.unitCostPhp), 0);
+  const poVatAmount = totalPoAmountPhp * 0.12;
+  const poGrandTotal = totalPoAmountPhp + poVatAmount;
 
   const handleAddPoItem = () => {
     const mat = inventory.find(m => m.code === newSkuToAdd);
@@ -188,7 +189,7 @@ export default function ReportsModule({
         secondaryUom: mat.secondaryUom,
         orderQtyPrimary: 10,
         primaryUom: mat.primaryUom,
-        conversionFactor: mat.conversionFactor || 1,
+        conversionFactor: mat.conversionFactor,
         unitCostPhp: mat.unitCost || 1000
       }
     ]);
@@ -199,7 +200,8 @@ export default function ReportsModule({
   };
 
   const handleExportPoCsv = () => {
-    const flat = displayedPoItems.map(i => ({
+    const flat = displayedPoItems.map((i, idx) => ({
+      LineNo: idx + 1,
       PONumber: poNumber,
       Supplier: i.supplier,
       MaterialCode: i.code,
@@ -211,7 +213,46 @@ export default function ReportsModule({
       UnitPricePHP: i.unitCostPhp,
       LineTotalPHP: i.orderQtyPrimary * i.unitCostPhp
     }));
-    downloadCSV(flat, ['PONumber', 'Supplier', 'MaterialCode', 'ItemDescription', 'OrderQtyBulk', 'BulkUoM', 'EquivalentNetQty', 'NetUoM', 'UnitPricePHP', 'LineTotalPHP'], `Purchase_Order_${poNumber}`);
+    downloadCSV(flat, ['LineNo', 'PONumber', 'Supplier', 'MaterialCode', 'ItemDescription', 'OrderQtyBulk', 'BulkUoM', 'EquivalentNetQty', 'NetUoM', 'UnitPricePHP', 'LineTotalPHP'], `Purchase_Order_${poNumber}`);
+    if(onRecordAudit) {
+      onRecordAudit('PO_EXPORTED_CSV', `Exported Purchase Order ${poNumber} (${displayedPoItems.length} items, Grand Total ₱${poGrandTotal.toLocaleString()})`);
+    }
+  };
+
+  const handleRefreshRecommendations = () => {
+     const lowItems = inventory.filter(i => i.currentBalance <= i.threshold * 1.25);
+     const initialPoLines = (lowItems.length > 0 ? lowItems : inventory.slice(0, 5)).map(item => {
+      const currentBulk = item.currentBalance / (item.conversionFactor || 1);
+      const thresholdBulk = item.threshold / (item.conversionFactor || 1);
+      const recommendedOrderBulk = Math.max(Math.ceil((thresholdBulk * 2) - currentBulk), 5);
+      return {
+        code: item.code,
+        name: item.name,
+        brand: item.brand || 'Standard',
+        supplier: item.supplier || 'P.L. Sebastian Corporation',
+        currentBalanceSec: item.currentBalance,
+        thresholdSec: item.threshold,
+        secondaryUom: item.secondaryUom,
+        orderQtyPrimary: recommendedOrderBulk,
+        primaryUom: item.primaryUom,
+        conversionFactor: item.conversionFactor || 1,
+        unitCostPhp: item.unitCost || 1000
+      };
+    });
+    setPoItems(initialPoLines);
+    if(onRecordAudit) {
+        onRecordAudit('PO_REPLENISHMENT_REFRESH', 'Recalculated low-stock PO replenishment recommendations from live inventory.');
+    }
+  };
+
+  const handlePoQtyChange = (code, val) => {
+    const qty = Math.max(0, parseFloat(val) || 0);
+    setPoItems(prev => prev.map(p => p.code === code ? {...p, orderQtyPrimary: qty} : p));
+  };
+  
+  const handlePoPriceChange = (code, val) => {
+      const price = Math.max(0, parseFloat(val) || 0);
+      setPoItems(prev => prev.map(p => p.code === code ? {...p, unitCostPhp: price} : p));
   };
 
   return (
@@ -220,14 +261,14 @@ export default function ReportsModule({
         <div>
           <div className="flex items-center gap-2">
             <span className="font-mono text-xs font-bold bg-[#5B2E7A] text-white px-2 py-0.5 rounded">
-              SOP-PUR-002 / Analytics
+              SOP-PUR-002 / Analytics Hub
             </span>
             <h2 className="font-serif text-2xl font-bold text-[#3D1C52]">
-              Multi-Period Reports & Automated Purchase Order Generator
+              Warehouse Reports, CSV Ingest & Purchase Order Generator
             </h2>
           </div>
           <p className="text-xs text-gray-600 mt-0.5">
-            Filter operational ledgers by Week, Month, Quarter, or Year · Import/Export CSV & PDF · Generate Supplier Purchase Orders from Low-Stock Alerts
+            Sort records by Week, Month, Quarter, or Year · Bulk CSV Inventory Sync · Automated Supplier Replenishment PO (`Form-PUR-002`)
           </p>
         </div>
 
@@ -238,7 +279,7 @@ export default function ReportsModule({
               activeView === 'reports' ? 'bg-[#3D1C52] text-white shadow-sm' : 'text-gray-600 hover:text-gray-900'
             }`}
           >
-            <BarChart3 size={14} /> Operational Reports (Week/Month/Quarter/Year)
+            <BarChart3 size={14} /> Documentation & CSV Reports
           </button>
           <button
             onClick={() => setActiveView('po_generator')}
@@ -250,6 +291,13 @@ export default function ReportsModule({
           </button>
         </div>
       </div>
+      
+      {csvImportStatus && (
+        <div className="bg-green-100 border border-green-300 text-green-900 p-3 rounded-xl flex items-center gap-2 text-xs font-bold">
+          <CheckCircle2 size={16} className="text-green-700" />
+          <span>{csvImportStatus}</span>
+        </div>
+      )}
 
       {/* VIEW 1: MULTI-PERIOD REPORTS & CSV IMPORT/EXPORT */}
       {activeView === 'reports' && (
@@ -257,11 +305,11 @@ export default function ReportsModule({
           <div className="bg-white p-4 rounded-xl border border-[#E2D1B8] shadow-sm flex flex-wrap gap-4 items-center justify-between print:hidden">
             <div className="flex items-center gap-2 flex-wrap">
               <Calendar size={18} className="text-[#C8963E]" />
-              <span className="font-bold text-xs text-gray-700">Sort Period:</span>
+              <span className="font-bold text-xs text-gray-700">Filter Timeframe:</span>
               <select 
                 value={timeframe} 
                 onChange={(e) => setTimeframe(e.target.value)}
-                className="p-2 border rounded-lg text-xs font-bold bg-[#FAF6EE] focus:outline-none focus:ring-2 focus:ring-[#C8963E]"
+                className="p-2 border rounded-lg text-xs font-bold bg-[#FAF6EE] text-[#3D1C52] focus:outline-none focus:ring-2 focus:ring-[#C8963E]"
               >
                 <option value="WEEK">This Week</option>
                 <option value="MONTH">This Month (Nov 2026+)</option>
@@ -288,7 +336,7 @@ export default function ReportsModule({
             {/* 1. Receiving Report */}
             <div className="bg-white rounded-xl border border-[#E2D1B8] shadow-sm overflow-hidden">
               <div className="px-6 py-4 bg-[#FAF6EE] border-b border-[#E2D1B8] flex justify-between items-center">
-                <h3 className="font-serif font-bold text-[#3D1C52] flex items-center gap-2">
+                <h3 className="font-serif font-bold text-[#3D1C52] flex items-center gap-2 text-sm">
                   <ArrowDownRight size={18} className="text-[#1E7A3E]" /> 1. Incoming Raw Materials (`Form-REC-001`)
                 </h3>
                 <button onClick={handleExportReceiving} className="text-xs bg-white border border-[#1E7A3E] text-[#1E7A3E] font-bold px-3 py-1 rounded hover:bg-green-50 flex items-center gap-1 print:hidden">
@@ -313,10 +361,10 @@ export default function ReportsModule({
                     ) : (
                       filteredReceiving.map(r => (r.items || []).map((i, idx) => (
                         <tr key={`${r.reportNo}-${idx}`}>
-                          <td className="p-3">{r.date}</td>
-                          <td className="p-3 font-mono font-bold">{r.reportNo} ({r.poNo})</td>
+                          <td className="p-3 font-mono">{r.date}</td>
+                          <td className="p-3 font-mono font-bold text-[#5B2E7A]">{r.reportNo} ({r.poNo})</td>
                           <td className="p-3">{r.supplier}</td>
-                          <td className="p-3">{i.materialCode} — {i.name}</td>
+                          <td className="p-3 font-medium">{i.materialCode} — {i.name}</td>
                           <td className="p-3 text-right font-mono">{i.secondaryQty} {i.secondaryUom}</td>
                           <td className="p-3 text-right font-mono font-bold text-[#1E7A3E]">₱{i.totalAmount?.toLocaleString()}</td>
                         </tr>
@@ -330,7 +378,7 @@ export default function ReportsModule({
             {/* 2. Withdrawals Report */}
             <div className="bg-white rounded-xl border border-[#E2D1B8] shadow-sm overflow-hidden">
               <div className="px-6 py-4 bg-[#FAF6EE] border-b border-[#E2D1B8] flex justify-between items-center">
-                <h3 className="font-serif font-bold text-[#3D1C52] flex items-center gap-2">
+                <h3 className="font-serif font-bold text-[#3D1C52] flex items-center gap-2 text-sm">
                   <ArrowUpRight size={18} className="text-[#5B2E7A]" /> 2. Warehouse Bulk & Line Withdrawals (`Form-WAR-001`)
                 </h3>
                 <button onClick={handleExportWithdrawals} className="text-xs bg-white border border-[#5B2E7A] text-[#5B2E7A] font-bold px-3 py-1 rounded hover:bg-purple-50 flex items-center gap-1 print:hidden">
@@ -345,7 +393,7 @@ export default function ReportsModule({
                       <th className="p-3">Slip #</th>
                       <th className="p-3">Recipient / Line</th>
                       <th className="p-3">Material</th>
-                      <th className="p-3 text-right">Net Qty</th>
+                      <th className="p-3 text-right">Net Qty Issued</th>
                       <th className="p-3 text-center">Status</th>
                     </tr>
                   </thead>
@@ -354,10 +402,10 @@ export default function ReportsModule({
                       <tr><td colSpan="6" className="p-4 text-center text-gray-500">No records for this timeframe.</td></tr>
                     ) : (
                       filteredWithdrawals.map(w => (w.items || []).map((i, idx) => (
-                        <tr key={`${w.slipNo}-${idx}`}>
-                          <td className="p-3">{w.date}</td>
-                          <td className="p-3 font-mono font-bold">{w.slipNo}</td>
-                          <td className="p-3">{w.requestingEntity}</td>
+                        <tr key={`${w.slipNo}-${idx}`} className="hover:bg-[#FAF6EE]/40">
+                          <td className="p-3 font-mono">{w.date}</td>
+                          <td className="p-3 font-mono font-bold text-[#5B2E7A]">{w.slipNo}</td>
+                          <td className="p-3 font-medium">{w.requestingEntity}</td>
                           <td className="p-3">{i.materialCode} — {i.name}</td>
                           <td className="p-3 text-right font-mono font-bold text-[#5B2E7A]">{i.qtyIssuedSec} {i.secondaryUom}</td>
                           <td className="p-3 text-center"><span className="px-2 py-0.5 rounded bg-gray-100 text-[10px] font-bold">{w.status}</span></td>
@@ -372,7 +420,7 @@ export default function ReportsModule({
             {/* 3. Batching & Kitting Report */}
             <div className="bg-white rounded-xl border border-[#E2D1B8] shadow-sm overflow-hidden">
               <div className="px-6 py-4 bg-[#FAF6EE] border-b border-[#E2D1B8] flex justify-between items-center">
-                <h3 className="font-serif font-bold text-[#3D1C52] flex items-center gap-2">
+                <h3 className="font-serif font-bold text-[#3D1C52] flex items-center gap-2 text-sm">
                   <Scale size={18} className="text-[#C8963E]" /> 3. Outlet Batching & Kitting Orders (`Form-PRO-001` / `Form-ING-001`)
                 </h3>
                 <button onClick={handleExportBatching} className="text-xs bg-white border border-[#C8963E] text-[#C8963E] font-bold px-3 py-1 rounded hover:bg-amber-50 flex items-center gap-1 print:hidden">
@@ -387,23 +435,21 @@ export default function ReportsModule({
                       <th className="p-3">Order ID</th>
                       <th className="p-3">Target Outlet</th>
                       <th className="p-3">Recipe & Kit Count</th>
-                      <th className="p-3">Upstream Bulk Slip</th>
                       <th className="p-3 text-right">Scaled Weight</th>
                       <th className="p-3 text-center">Status</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200">
                     {filteredBatchOrders.length === 0 ? (
-                      <tr><td colSpan="7" className="p-4 text-center text-gray-500">No records for this timeframe.</td></tr>
+                      <tr><td colSpan="6" className="p-4 text-center text-gray-500">No records for this timeframe.</td></tr>
                     ) : (
                       filteredBatchOrders.map(b => (
-                        <tr key={b.orderId}>
-                          <td className="p-3">{b.requestDate}</td>
-                          <td className="p-3 font-mono font-bold">{b.orderId}</td>
+                        <tr key={b.orderId} className="hover:bg-[#FAF6EE]/40">
+                          <td className="p-3 font-mono">{b.requestDate}</td>
+                          <td className="p-3 font-mono font-bold text-[#5B2E7A]">{b.orderId}</td>
                           <td className="p-3 font-semibold text-[#C8963E]">{b.outletName}</td>
                           <td className="p-3">{b.recipeName} ({b.batchMultiplier} Kits)</td>
-                          <td className="p-3 font-mono text-[11px]">{b.linkedWithdrawalSlipNo || 'N/A'}</td>
-                          <td className="p-3 text-right font-mono font-bold">{b.actualBatchedKg ? `${b.actualBatchedKg} kg` : 'Pending'}</td>
+                          <td className="p-3 text-right font-mono font-bold text-[#1E7A3E]">{b.actualBatchedKg ? `${b.actualBatchedKg} kg` : 'Pending'}</td>
                           <td className="p-3 text-center">
                             <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-gray-100">{b.status}</span>
                           </td>
@@ -421,37 +467,65 @@ export default function ReportsModule({
       {/* VIEW 2: AUTOMATED PURCHASE ORDER (PO) GENERATOR */}
       {activeView === 'po_generator' && (
         <div className="space-y-6">
-          {/* Controls Bar */}
-          <div className="bg-white p-4 rounded-xl border border-[#E2D1B8] shadow-sm flex flex-wrap gap-3 items-end justify-between print:hidden">
-            <div className="flex flex-wrap gap-3 items-end text-xs">
+          <div className="bg-white p-5 rounded-xl border border-[#E2D1B8] shadow-sm space-y-4">
+            <div className="flex justify-between items-center flex-wrap gap-2 border-b pb-3">
               <div>
-                <label className="block font-bold text-gray-700 mb-1">PO Document Number</label>
+                <h3 className="font-serif font-bold text-base text-[#5B2E7A] flex items-center gap-2">
+                  <ShoppingCart size={18} /> Automated Replenishment Purchase Order Builder (`Form-PUR-002`)
+                </h3>
+                <p className="text-xs text-gray-500">
+                  Pre-filled with items at or below safety reorder threshold. Customize quantities, add/remove items, and print/export for suppliers.
+                </p>
+              </div>
+              <div className="flex gap-2 flex-wrap">
+                <button
+                  onClick={handleRefreshRecommendations}
+                  className="bg-amber-50 hover:bg-amber-100 text-[#D68910] border border-amber-300 text-xs font-bold px-3 py-1.5 rounded-lg"
+                >
+                  Reset to Low-Stock Recommendations
+                </button>
+                <button
+                  onClick={handleExportPoCsv}
+                  className="bg-[#1E7A3E] hover:bg-[#165c2f] text-white text-xs font-bold px-3.5 py-1.5 rounded-lg flex items-center gap-1"
+                >
+                  <Download size={13} /> Download PO CSV
+                </button>
+                <button
+                  onClick={() => window.print()}
+                  className="bg-[#3D1C52] hover:bg-[#240e32] text-white text-xs font-bold px-4 py-1.5 rounded-lg flex items-center gap-1.5"
+                >
+                  <Printer size={13} /> Print Official PO
+                </button>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 text-xs">
+              <div>
+                <label className="block font-bold text-gray-700 mb-1">Purchase Order No.</label>
                 <input
                   type="text"
                   value={poNumber}
                   onChange={(e) => setPoNumber(e.target.value)}
-                  className="p-2 border rounded font-mono font-bold text-[#5B2E7A]"
+                  className="w-full p-2 border rounded font-mono font-bold text-[#5B2E7A]"
                 />
               </div>
-
               <div>
                 <label className="block font-bold text-gray-700 mb-1">Filter by Supplier</label>
                 <select
                   value={selectedSupplierFilter}
                   onChange={(e) => setSelectedSupplierFilter(e.target.value)}
-                  className="p-2 border rounded bg-white font-medium"
+                  className="w-full p-2 border rounded bg-white font-bold text-[#3D1C52]"
                 >
-                  {suppliersList.map(s => <option key={s} value={s}>{s === 'ALL' ? 'All Suppliers (Consolidated PO)' : s}</option>)}
+                  {suppliersList.map(s => <option key={s} value={s}>{s}</option>)}
                 </select>
               </div>
-
-              <div className="flex items-end gap-1.5">
-                <div>
-                  <label className="block font-bold text-gray-700 mb-1">Add Any SKU to PO</label>
+              <div>
+                <label className="block font-bold text-gray-700 mb-1">Add Any SKU to PO</label>
+                <div className="flex items-center gap-1.5">
                   <select
                     value={newSkuToAdd}
                     onChange={(e) => setNewSkuToAdd(e.target.value)}
-                    className="p-2 border rounded bg-white max-w-xs"
+                    className="flex-1 p-2 border rounded bg-white font-medium"
                   >
                     {inventory.map(m => (
                       <option key={m.code} value={m.code}>
@@ -459,41 +533,25 @@ export default function ReportsModule({
                       </option>
                     ))}
                   </select>
+                  <button
+                    type="button"
+                    onClick={handleAddPoItem}
+                    className="bg-[#5B2E7A] hover:bg-[#3D1C52] text-white font-bold px-3 py-2 rounded flex items-center gap-1"
+                  >
+                    <Plus size={14} /> Add
+                  </button>
                 </div>
-                <button
-                  type="button"
-                  onClick={handleAddPoItem}
-                  className="bg-[#5B2E7A] hover:bg-[#3D1C52] text-white font-bold px-3 py-2 rounded flex items-center gap-1"
-                >
-                  <Plus size={14} /> Add Item
-                </button>
               </div>
-            </div>
-
-            <div className="flex gap-2">
-              <button
-                onClick={handleExportPoCsv}
-                className="bg-[#1E7A3E] hover:bg-[#165c2f] text-white text-xs font-bold px-4 py-2 rounded-lg shadow flex items-center gap-1.5"
-              >
-                <Download size={14} /> Download PO (CSV)
-              </button>
-              <button
-                onClick={() => window.print()}
-                className="bg-[#3D1C52] hover:bg-[#240e32] text-white text-xs font-bold px-4 py-2 rounded-lg shadow flex items-center gap-1.5"
-              >
-                <Printer size={14} /> Print / Save Official PO PDF
-              </button>
             </div>
           </div>
 
-          {/* Printable Purchase Order Document */}
-          <div className="bg-white rounded-2xl border-2 border-[#5B2E7A] p-6 md:p-8 shadow-lg space-y-6">
+          <div id="printable-purchase-order" className="bg-white rounded-2xl border-2 border-[#5B2E7A] p-6 md:p-8 shadow-lg space-y-6">
             <div className="border-b-2 border-[#5B2E7A] pb-4 flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4">
               <div>
                 <p className="text-[10px] font-bold tracking-widest text-[#C8963E] uppercase">
-                  OFFICIAL PROCUREMENT REQUISITION · SOP-PUR-002 (`Form-PUR-002`)
+                  OFFICIAL PROCUREMENT REQUISITION · SOP-PUR-002
                 </p>
-                <h1 className="font-serif font-bold text-2xl text-[#3D1C52]">
+                <h1 className="font-serif font-bold text-2xl text-[#3D1C52] mt-0.5">
                   PURCHASE ORDER DOCUMENT
                 </h1>
                 <p className="text-xs text-gray-600">
@@ -504,131 +562,89 @@ export default function ReportsModule({
                 </p>
               </div>
 
-              <div className="bg-[#FAF6EE] p-3 rounded-lg border border-[#E2D1B8] text-xs text-right">
+              <div className="bg-[#FAF6EE] p-3 rounded-lg border border-[#E2D1B8] text-xs text-right min-w-[230px]">
                 <p className="font-mono font-bold text-sm text-[#5B2E7A]">{poNumber}</p>
-                <p className="text-gray-600">Date Issued: {new Date().toISOString().slice(0, 10)}</p>
-                <p className="font-semibold text-[#1E7A3E]">Vendor Scope: {selectedSupplierFilter}</p>
+                <p className="text-gray-600 mt-0.5"><strong>Date:</strong> {new Date().toISOString().slice(0, 10)}</p>
+                <p className="font-semibold text-[#1E7A3E] mt-1">Vendor: {selectedSupplierFilter}</p>
               </div>
             </div>
 
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs border border-gray-200">
-                <thead className="bg-[#5B2E7A] text-white">
+                <thead className="bg-[#3D1C52] text-white">
                   <tr>
                     <th className="p-2.5">SKU Code</th>
-                    <th className="p-2.5">Material Description & Brand</th>
-                    <th className="p-2.5">Primary Supplier</th>
-                    <th className="p-2.5 text-right">Current Bal / Min</th>
-                    <th className="p-2.5 text-right">Order Qty (Bulk)</th>
-                    <th className="p-2.5 text-right">Net Equivalent</th>
-                    <th className="p-2.5 text-right">Unit Cost (₱)</th>
+                    <th className="p-2.5">Material Description</th>
+                    <th className="p-2.5">Supplier</th>
+                    <th className="p-2.5 text-right">Cur. Bal</th>
+                    <th className="p-2.5 text-center">Order Qty (Bulk)</th>
+                    <th className="p-2.5 text-right">Unit Price (₱)</th>
                     <th className="p-2.5 text-right">Line Total (₱)</th>
                     <th className="p-2.5 text-center print:hidden">Remove</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
-                  {displayedPoItems.map((item) => (
-                    <tr key={item.code} className="hover:bg-[#FAF6EE]/50">
-                      <td className="p-2.5 font-mono font-bold text-[#5B2E7A]">{item.code}</td>
-                      <td className="p-2.5 font-medium">
-                        {item.name} <span className="text-gray-400 text-[10px]">({item.brand})</span>
-                      </td>
-                      <td className="p-2.5 text-gray-700">{item.supplier}</td>
-                      <td className="p-2.5 text-right font-mono text-[11px]">
-                        <span className={item.currentBalanceSec <= item.thresholdSec ? 'text-red-600 font-bold' : 'text-gray-600'}>
-                          {item.currentBalanceSec}
-                        </span> / {item.thresholdSec} {item.secondaryUom}
-                      </td>
-                      <td className="p-2.5 text-right">
-                        <div className="flex items-center justify-end gap-1">
-                          <input
-                            type="number"
-                            min="1"
-                            value={item.orderQtyPrimary}
-                            onChange={(e) => {
-                              const val = parseFloat(e.target.value) || 1;
-                              setPoItems(prev => prev.map(p => p.code === item.code ? { ...p, orderQtyPrimary: val } : p));
-                            }}
-                            className="w-16 p-1 border rounded text-right font-mono font-bold text-[#3D1C52]"
-                          />
-                          <span className="text-[11px] text-gray-600">{item.primaryUom}s</span>
-                        </div>
-                      </td>
-                      <td className="p-2.5 text-right font-mono text-[#1E7A3E] font-bold">
-                        {(item.orderQtyPrimary * item.conversionFactor).toLocaleString()} {item.secondaryUom}
-                      </td>
-                      <td className="p-2.5 text-right">
-                        <input
-                          type="number"
-                          step="any"
-                          value={item.unitCostPhp}
-                          onChange={(e) => {
-                            const val = parseFloat(e.target.value) || 0;
-                            setPoItems(prev => prev.map(p => p.code === item.code ? { ...p, unitCostPhp: val } : p));
-                          }}
-                          className="w-20 p-1 border rounded text-right font-mono"
-                        />
-                      </td>
-                      <td className="p-2.5 text-right font-mono font-bold text-gray-900">
-                        ₱{(item.orderQtyPrimary * item.unitCostPhp).toLocaleString('en-PH', { minimumFractionDigits: 2 })}
-                      </td>
-                      <td className="p-2.5 text-center print:hidden">
-                        <button
-                          onClick={() => handleRemovePoItem(item.code)}
-                          className="text-red-500 hover:bg-red-50 p-1 rounded"
-                          title="Remove from PO"
-                        >
-                          <Trash2 size={14} />
-                        </button>
+                  {displayedPoItems.length === 0 ? (
+                    <tr>
+                      <td colSpan="8" className="p-6 text-center text-gray-500 italic">
+                        No items in this Purchase Order view.
                       </td>
                     </tr>
-                  ))}
+                  ) : (
+                    displayedPoItems.map((line, idx) => (
+                      <tr key={line.code} className="hover:bg-[#FAF6EE]/50">
+                        <td className="p-2.5 font-mono font-bold text-[#5B2E7A]">{line.code}</td>
+                        <td className="p-2.5 font-medium">{line.name}</td>
+                        <td className="p-2.5 text-gray-700">{line.supplier}</td>
+                        <td className="p-2.5 text-right font-mono text-[#C0392B] font-bold">
+                          {line.currentBalanceSec} {line.secondaryUom}
+                        </td>
+                        <td className="p-2.5 text-center">
+                          <div className="flex items-center justify-center gap-1">
+                            <input
+                              type="number"
+                              min="1"
+                              value={line.orderQtyPrimary}
+                              onChange={(e) => handlePoQtyChange(line.code, e.target.value)}
+                              className="w-16 p-1.5 border rounded font-mono font-bold text-center text-[#5B2E7A]"
+                            />
+                            <span className="font-semibold text-gray-700">{line.primaryUom}s</span>
+                          </div>
+                        </td>
+                        <td className="p-2.5 text-right">
+                          <input
+                            type="number"
+                            step="any"
+                            value={line.unitCostPhp}
+                            onChange={(e) => handlePoPriceChange(line.code, e.target.value)}
+                            className="w-20 p-1.5 border rounded text-right font-mono"
+                          />
+                        </td>
+                        <td className="p-2.5 text-right font-mono font-bold text-gray-900">
+                          ₱{line.lineTotal.toLocaleString('en-PH', { minimumFractionDigits: 2 })}
+                        </td>
+                        <td className="p-2.5 text-center print:hidden">
+                          <button
+                            type="button"
+                            onClick={() => handleRemovePoItem(line.code)}
+                            className="text-red-500 hover:bg-red-50 p-1 rounded"
+                          >
+                            <Trash2 size={15} />
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  )}
                 </tbody>
               </table>
             </div>
 
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 pt-3 border-t">
-              <div className="flex-1 w-full">
-                <label className="block text-[11px] font-bold text-gray-600 uppercase mb-1">
-                  Supplier Quality & Receiving Directives (`SOP-REC-001`):
-                </label>
-                <textarea
-                  rows="2"
-                  value={poNotes}
-                  onChange={(e) => setPoNotes(e.target.value)}
-                  className="w-full p-2 border rounded text-xs bg-[#FAF6EE]"
-                />
-              </div>
-
+            <div className="flex justify-end pt-4">
               <div className="text-right space-y-1 bg-[#FAF6EE] p-4 rounded-xl border border-[#C8963E] min-w-[240px]">
                 <p className="text-xs text-gray-500">Total Authorized PO Amount:</p>
                 <p className="text-2xl font-serif font-bold text-[#1E7A3E]">
                   ₱{totalPoAmountPhp.toLocaleString('en-PH', { minimumFractionDigits: 2 })}
                 </p>
-              </div>
-            </div>
-
-            {/* Sign-off Blocks */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-4 border-t-2 border-[#5B2E7A] text-xs">
-              <div className="border rounded-lg p-3 bg-gray-50">
-                <p className="text-[10px] font-bold uppercase text-gray-500">Prepared By (Warehouse):</p>
-                <p className="font-bold text-[#3D1C52] mt-1">Jade Q. Dela Cruz</p>
-                <p className="text-[10px] text-gray-400 mt-2">Warehouse Supervisor</p>
-              </div>
-              <div className="border rounded-lg p-3 bg-gray-50">
-                <p className="text-[10px] font-bold uppercase text-gray-500">Canvassed & Reconciled:</p>
-                <p className="font-bold text-[#3D1C52] mt-1">Mariejohn F. Tacuban</p>
-                <p className="text-[10px] text-gray-400 mt-2">Inventory & Purchasing Manager</p>
-              </div>
-              <div className="border rounded-lg p-3 bg-gray-50">
-                <p className="text-[10px] font-bold uppercase text-gray-500">Costing & Budget Clearance:</p>
-                <p className="font-bold text-[#3D1C52] mt-1">Jeanifer S. Sauping / M.C. Basoc</p>
-                <p className="text-[10px] text-gray-400 mt-2">Finance Directorate</p>
-              </div>
-              <div className="border rounded-lg p-3 bg-gray-50">
-                <p className="text-[10px] font-bold uppercase text-gray-500">Approved By (Executive):</p>
-                <p className="font-bold text-[#3D1C52] mt-1">Angelina P. Sun</p>
-                <p className="text-[10px] text-gray-400 mt-2">Head of Administration / COA</p>
               </div>
             </div>
           </div>
