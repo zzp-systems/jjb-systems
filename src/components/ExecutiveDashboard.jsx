@@ -107,7 +107,7 @@ export default function ExecutiveDashboard({
           className={`bg-white p-4 rounded-xl border border-[#E2D1B8] shadow-sm border-l-4 border-l-[#D68910] flex items-center justify-between cursor-pointer transition hover:shadow-md ${statusFilter === 'LOW_STOCK' ? 'ring-2 ring-[#D68910]' : ''}`}
         >
           <div>
-            <p className="text-[11px] text-gray-500 font-bold uppercase tracking-wider">Reorder Alerts (< Safe Threshold)</p>
+            <p className="text-[11px] text-gray-500 font-bold uppercase tracking-wider">Reorder Alerts (&lt; Safe Threshold)</p>
             <h3 className="text-xl md:text-2xl font-bold font-serif text-[#D68910] mt-0.5">
               {lowStockCount} Items
             </h3>
