@@ -31,7 +31,6 @@ export default function Header({
 
   return (
     <header className="bg-[#3D1C52] text-white shadow-xl sticky top-0 z-30 border-b border-[#C8963E]/40 print:hidden">
-      {/* Top Corporate Strip */}
       <div className="bg-[#240e32] px-3 py-1.5 text-xs text-[#E5C585] flex flex-wrap justify-between items-center border-b border-[#5B2E7A]/60">
         <div className="flex items-center gap-2">
           <span className="font-semibold text-white tracking-wide">JANG-JANG BAKESHOP & KINGDOM CONFECTIONARY</span>
@@ -46,9 +45,7 @@ export default function Header({
         </div>
       </div>
 
-      {/* Main Header Row */}
       <div className="px-4 py-2.5 flex flex-wrap justify-between items-center gap-3">
-        {/* Brand & Facility Info */}
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-full bg-white p-1 border-2 border-[#C8963E] flex items-center justify-center shadow-md flex-shrink-0">
             <img 
@@ -64,7 +61,7 @@ export default function Header({
                 JJB Warehouse & Batch Kitting OS
               </h1>
               <span className="bg-[#C8963E] text-[#240e32] font-bold text-[10px] px-1.5 py-0.5 rounded uppercase">
-                v4.4 WMS
+                v4.6 WMS
               </span>
             </div>
             <p className="text-[11px] text-[#E5C585]">
@@ -73,21 +70,17 @@ export default function Header({
           </div>
         </div>
 
-        {/* Control Badges & Role Switcher */}
         <div className="flex items-center gap-2 flex-wrap">
-          {/* Quick Tablet/Mobile Mode Toggle */}
           <button
             onClick={() => setIsMobileMode(!isMobileMode)}
             className={`px-2.5 py-1.5 rounded text-xs font-semibold flex items-center gap-1.5 transition border ${
               isMobileMode ? 'bg-[#C8963E] text-[#240e32] border-[#C8963E]' : 'bg-[#5B2E7A]/60 text-gray-200 border-[#7A3F9E] hover:text-white'
             }`}
-            title="Toggle Mobile/Tablet Touch-Optimized Layout for Floor Tasks"
           >
             {isMobileMode ? <Smartphone size={13} /> : <Laptop size={13} />}
             <span className="hidden sm:inline">{isMobileMode ? "Tablet / Phone UI" : "Desktop UI"}</span>
           </button>
 
-          {/* Offline / Online Queue Toggle */}
           <button
             onClick={() => setIsOffline(!isOffline)}
             className={`px-2.5 py-1.5 rounded text-xs font-semibold flex items-center gap-1.5 transition border ${
@@ -97,7 +90,6 @@ export default function Header({
                 ? 'bg-[#D68910] text-white border-amber-400 animate-pulse'
                 : 'bg-[#1E7A3E] text-white border-green-500'
             }`}
-            title="Simulate Local Queue vs Online Sync"
           >
             {isOffline ? <WifiOff size={13} /> : <Wifi size={13} />}
             <span>
@@ -109,7 +101,6 @@ export default function Header({
             </span>
           </button>
 
-          {/* Role Switcher */}
           <div className="flex items-center bg-[#240e32] border border-[#C8963E]/60 rounded px-2 py-1">
             <span className="text-[10px] text-[#E5C585] font-bold uppercase mr-1.5 hidden md:inline">Operator:</span>
             <select
@@ -125,11 +116,9 @@ export default function Header({
             </select>
           </div>
 
-          {/* Quick EOD Action */}
           <button
             onClick={onQuickEod}
             className="bg-gradient-to-r from-[#C8963E] to-[#E5C585] hover:from-[#b58330] hover:to-[#d4b06f] text-[#240e32] font-bold text-xs px-3 py-1.5 rounded shadow flex items-center gap-1.5 transition"
-            title="Open Automated 23:45 End-of-Day Settlement Report"
           >
             <Send size={13} />
             <span className="hidden md:inline">23:45</span> EOD Report
@@ -137,7 +126,6 @@ export default function Header({
         </div>
       </div>
 
-      {/* Navigation Tabs Bar */}
       <nav className="bg-[#240e32] px-2 flex overflow-x-auto gap-1 border-t border-[#5B2E7A]/40 scrollbar-none">
         {[
           { id: 'dashboard', label: '1. Live FEFO Inventory', icon: Warehouse, badge: lowStockCount > 0 ? `${lowStockCount} Low` : null, badgeColor: 'bg-[#D68910]' },
