@@ -15,27 +15,20 @@ export default function EodReportModule({
   onRecordAudit,
   lastAutoDispatchTime = null
 }) {
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().slice(0, 10));
+  const [selectedDate, setSelectedDate] = useState('2026-11-03');
   const [copiedStatus, setCopiedStatus] = useState(false);
   const [dispatchedStatus, setDispatchedStatus] = useState(false);
   const [customEmail, setCustomEmail] = useState('');
   const [recipients, setRecipients] = useState(EOD_EMAIL_RECIPIENTS);
 
-  // Filter records matching selectedDate (or show all if selectedDate is baseline 2026-11-03)
-  const matchesSelectedDate = (recordDate) => {
-    if (!recordDate) return true;
-    return recordDate === selectedDate || selectedDate === '2026-11-03';
-  };
-
-  const todaysReceiving = receivingReports.filter(r => matchesSelectedDate(r.date));
+  const todaysReceiving = receivingReports.filter(r => r.date === selectedDate || !r.date);
   const totalReceivingValue = todaysReceiving.reduce((sum, r) => sum + (r.totalPaid || 0), 0);
-  const todaysWithdrawals = withdrawals.filter(w => matchesSelectedDate(w.date));
-  const todaysRequestedRecipes = batchOrders.filter(b => matchesSelectedDate(b.requestDate));
+  const todaysWithdrawals = withdrawals.filter(w => w.date === selectedDate || !w.date);
+  const todaysRequestedRecipes = batchOrders.filter(b => b.requestDate === selectedDate || !b.requestDate);
   const todaysBatchedAndReleased = batchOrders.filter(
-    b => matchesSelectedDate(b.requestDate) && (b.status === 'BATCHED_KITTED' || b.status === 'RELEASED')
+    b => (b.requestDate === selectedDate || !b.requestDate) && (b.status === 'BATCHED_KITTED' || b.status === 'RELEASED')
   );
 
-  // Build Complete 4-Part Plain-Text Report (Includes Full 3-Step Batching Lifecycle)
   const buildPlainTextReport = () => {
     let body = `JANG-JANG BAKESHOP & KINGDOM CONFECTIONARY\n`;
     body += `DAILY WAREHOUSE & INGREDIENT BATCHING END-OF-DAY (EOD) SETTLEMENT REPORT\n`;
@@ -83,7 +76,7 @@ export default function EodReportModule({
     } else {
       todaysRequestedRecipes.forEach((b, idx) => {
         const linkedSlip = withdrawals.find(
-          w => w.slipNo === b.linkedWithdrawalSlipNo || w.linkedOrderId === b.orderId || (w.purpose && w.purpose.includes(b.orderId))
+          w => w.slipNo === b.bulkReqSlipNo || w.linkedOrderId === b.orderId || (w.purpose && w.purpose.includes(b.orderId))
         );
         const bulkStatusText = linkedSlip
           ? `${linkedSlip.slipNo} (${linkedSlip.status} - Issued by ${linkedSlip.issuedBy})`
@@ -123,16 +116,15 @@ export default function EodReportModule({
 
     body += `========================================================================\n`;
     body += `23:45 PHT DAILY AUDIT SIGN-OFF:\n`;
-    body += `Warehouse Supervisor (Terminal 1): Jade Q. Dela Cruz\n`;
-    body += `Ingredient Batching Preparer (Terminal 2): Romeo B. Malusay\n`;
-    body += `Inventory & Stock Reconciler (Terminal 3): Mariejohn F. Tacuban\n`;
-    body += `QA & Food Safety Director (Terminal 3): Grace P. Suico\n`;
-    body += `Chief Operating Authority (Terminal 3): Angelina P. Sun\n`;
+    body += `Warehouse Supervisor: Jade Q. Dela Cruz\n`;
+    body += `Ingredient Batching Preparer: Romeo B. Malusay\n`;
+    body += `Inventory & Stock Reconciler: Mariejohn F. Tacuban\n`;
+    body += `QA & Food Safety Director: Grace P. Suico\n`;
+    body += `Chief Operating Authority: Angelina P. Sun\n`;
 
     return body;
   };
 
-  // SAFE DOWNLOAD METHOD (Bypasses URL Length Limits)
   const handleDownloadReport = () => {
     const reportText = buildPlainTextReport();
     const blob = new Blob([reportText], { type: 'text/plain;charset=utf-8' });
@@ -229,7 +221,6 @@ export default function EodReportModule({
         </div>
       </div>
 
-      {/* RECIPIENT STAKEHOLDERS BAR */}
       <div className="bg-[#FAF6EE] p-4 rounded-xl border border-[#C8963E]/40 shadow-sm space-y-2 print:hidden">
         <div className="flex justify-between items-center flex-wrap gap-2">
           <h4 className="font-serif font-bold text-xs text-[#5B2E7A] flex items-center gap-1.5">
@@ -356,7 +347,6 @@ export default function EodReportModule({
           </div>
         </div>
 
-        {/* PART 1: INCOMING RAW MATERIALS */}
         <div className="space-y-3">
           <div className="flex items-center justify-between border-b-2 border-gray-200 pb-2">
             <h3 className="font-serif font-bold text-base text-[#3D1C52] flex items-center gap-2">
@@ -382,7 +372,7 @@ export default function EodReportModule({
                     <th className="p-2.5 text-right">Secondary Net</th>
                     <th className="p-2.5">Lot & Expiry</th>
                     <th className="p-2.5">QA Gate Status</th>
-                    <th className="p-2.5 text-right">Amount (PHP)</th>
+                    <th className="p-2.5 text-right">Amount (₱)</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
@@ -423,7 +413,6 @@ export default function EodReportModule({
           )}
         </div>
 
-        {/* PART 2: WITHDRAWN / ISSUED MATERIALS */}
         <div className="space-y-3">
           <div className="flex items-center justify-between border-b-2 border-gray-200 pb-2">
             <h3 className="font-serif font-bold text-base text-[#3D1C52] flex items-center gap-2">
@@ -479,7 +468,6 @@ export default function EodReportModule({
           )}
         </div>
 
-        {/* PART 3: STEP 1 & STEP 2 OF BATCHING WORKFLOW */}
         <div className="space-y-3">
           <div className="flex items-center justify-between border-b-2 border-gray-200 pb-2">
             <h3 className="font-serif font-bold text-base text-[#3D1C52] flex items-center gap-2">
@@ -551,7 +539,6 @@ export default function EodReportModule({
           )}
         </div>
 
-        {/* PART 4: STEP 3 OF BATCHING WORKFLOW (ROMEO SCALING & RELEASE) */}
         <div className="space-y-3">
           <div className="flex items-center justify-between border-b-2 border-gray-200 pb-2">
             <h3 className="font-serif font-bold text-base text-[#3D1C52] flex items-center gap-2">
@@ -591,7 +578,7 @@ export default function EodReportModule({
                         <div className="text-[11px] text-[#C8963E] font-medium">{b.outletName}</div>
                       </td>
                       <td className="p-2.5 text-right font-mono">
-                        <div className="font-bold text-gray-900">{b.actualBatchedKg || 16.44} kg</div>
+                        <div className="font-bold text-gray-900">{b.actualBatchedKg || 22.0} kg</div>
                         <div className="text-[10px] text-[#1E7A3E] font-bold">{b.batchMultiplier} Kits ({b.actualBatchedUnits || b.requestedQtyPcs} pcs)</div>
                       </td>
                       <td className="p-2.5 text-[11px]">
@@ -628,36 +615,31 @@ export default function EodReportModule({
           )}
         </div>
 
-        {/* SIGN-OFF SIGNATURE BLOCKS */}
         <div className="pt-6 border-t-2 border-[#5B2E7A] space-y-4">
           <p className="text-[11px] font-bold uppercase text-gray-500 tracking-wider">
             Operational Governance & Regulatory Verification Signatures (A.O. 153 s.2004 cGMP · 23:45 PHT Cutoff):
           </p>
-
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-xs">
             <div className="border border-gray-300 rounded-lg p-3 bg-gray-50">
-              <p className="text-gray-500 text-[10px] uppercase font-bold">Terminal 1 · Warehouse Supervisor:</p>
+              <p className="text-gray-500 text-[10px] uppercase font-bold">Warehouse Custodian & Receiver:</p>
               <p className="font-bold text-[#3D1C52] mt-1">Jade Q. Dela Cruz</p>
               <div className="border-b border-gray-400 my-2"></div>
               <p className="text-[10px] text-gray-400">Date & Signature (Form-REC/WAR)</p>
             </div>
-
             <div className="border border-gray-300 rounded-lg p-3 bg-gray-50">
-              <p className="text-gray-500 text-[10px] uppercase font-bold">Terminal 2 · Batching Preparer:</p>
+              <p className="text-gray-500 text-[10px] uppercase font-bold">Ingredient Batching Preparer:</p>
               <p className="font-bold text-[#3D1C52] mt-1">Romeo B. Malusay</p>
               <div className="border-b border-gray-400 my-2"></div>
               <p className="text-[10px] text-gray-400">Date & Signature (Form-ING-001)</p>
             </div>
-
             <div className="border border-gray-300 rounded-lg p-3 bg-gray-50">
-              <p className="text-gray-500 text-[10px] uppercase font-bold">Terminal 3 · Stock Reconciler:</p>
+              <p className="text-gray-500 text-[10px] uppercase font-bold">Inventory & Stock Reconciler:</p>
               <p className="font-bold text-[#3D1C52] mt-1">Mariejohn F. Tacuban</p>
               <div className="border-b border-gray-400 my-2"></div>
               <p className="text-[10px] text-gray-400">Date & Signature (23:45 Perpetual)</p>
             </div>
-
             <div className="border border-gray-300 rounded-lg p-3 bg-gray-50">
-              <p className="text-gray-500 text-[10px] uppercase font-bold">Terminal 3 · Executive Authority:</p>
+              <p className="text-gray-500 text-[10px] uppercase font-bold">Chief Operating Authority:</p>
               <p className="font-bold text-[#3D1C52] mt-1">Angelina P. Sun</p>
               <div className="border-b border-gray-400 my-2"></div>
               <p className="text-[10px] text-gray-400">Executive Authorization</p>
